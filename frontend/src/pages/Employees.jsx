@@ -88,7 +88,7 @@ const Employees = () => {
           className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-colors"
         >
           <UploadCloud className="w-3.5 h-3.5" />
-          <span>Bulk CSV Import</span>
+          <span>Add Employee</span>
         </button>
       </div>
 
