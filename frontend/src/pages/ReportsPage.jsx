@@ -1,6 +1,6 @@
 import React from 'react';
-import { FileText, Download, Printer, CheckCircle, FileSpreadsheet } from 'lucide-react';
-import { employeeService, seatService } from '../services/api';
+import { FileText, Download, Printer, FileSpreadsheet } from 'lucide-react';
+import { employeeService } from '../services/api';
 import { useNotification } from '../context/NotificationContext';
 
 const ReportsPage = () => {
@@ -33,69 +33,65 @@ const ReportsPage = () => {
         link.click();
         document.body.removeChild(link);
 
-        showToast('CSV Audit Report exported successfully!', 'success');
+        showToast('CSV Report exported!', 'success');
       }
     } catch (err) {
       showToast('Export failed.', 'error');
     }
   };
 
-  const handlePrintPDF = () => {
-    window.print();
-  };
-
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-5 pb-12">
       <div>
-        <h2 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-          <FileText className="w-5 h-5 text-amber-500" />
-          <span>Ethara Spatial Audit & Reports Center</span>
+        <h2 className="text-lg font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+          <FileText className="w-4 h-4 text-slate-700" />
+          <span>Spatial Audit & Reports Center</span>
         </h2>
-        <p className="text-xs text-slate-500 font-medium mt-1">
-          Export full workforce seat utilization, project seat distribution, and unassigned staff reports
+        <p className="text-xs text-slate-500 font-medium mt-0.5">
+          Export full workforce seat utilization, project distribution, and unassigned staff reports
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* CSV Export Card */}
-        <div className="clay-card p-6 bg-white/90 backdrop-blur-md rounded-3xl border border-black/[0.04] shadow-clay flex flex-col justify-between">
+        <div className="clay-card p-5 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
           <div>
-            <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-4 font-bold">
-              <FileSpreadsheet className="w-6 h-6" />
+            <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-900 flex items-center justify-center mb-3 font-bold">
+              <FileSpreadsheet className="w-5 h-5" />
             </div>
-            <h3 className="font-extrabold text-base text-slate-900">Workforce Seat Allocation Excel/CSV</h3>
-            <p className="text-xs text-slate-500 font-medium mt-2 leading-relaxed">
+            <h3 className="font-extrabold text-sm text-slate-900">Workforce Seat Allocation CSV</h3>
+            <p className="text-xs text-slate-500 font-medium mt-1 leading-relaxed">
               Export complete 5,000 employee spatial allocation matrix including seat codes, floors, zones, and project tags.
             </p>
           </div>
 
           <button
             onClick={handleExportCSV}
-            className="mt-6 w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-xs rounded-2xl shadow-md flex items-center justify-center gap-2 transition-all"
+            className="mt-5 w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-xl shadow-xs flex items-center justify-center gap-2 transition-colors"
           >
             <Download className="w-4 h-4" />
-            <span>Download Full CSV Report</span>
+            <span>Download CSV Report</span>
           </button>
         </div>
 
         {/* PDF Print Card */}
-        <div className="clay-card p-6 bg-white/90 backdrop-blur-md rounded-3xl border border-black/[0.04] shadow-clay flex flex-col justify-between">
+        <div className="clay-card p-5 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
           <div>
-            <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center mb-4 font-bold">
-              <Printer className="w-6 h-6" />
+            <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-900 flex items-center justify-center mb-3 font-bold">
+              <Printer className="w-5 h-5" />
             </div>
-            <h3 className="font-extrabold text-base text-slate-900">Spatial Executive PDF Overview</h3>
-            <p className="text-xs text-slate-500 font-medium mt-2 leading-relaxed">
-              Generate print-ready executive floor map summary for management and facility compliance audits.
+            <h3 className="font-extrabold text-sm text-slate-900">Spatial Executive PDF Summary</h3>
+            <p className="text-xs text-slate-500 font-medium mt-1 leading-relaxed">
+              Generate print-ready executive floor map summary for management and facility audits.
             </p>
           </div>
 
           <button
-            onClick={handlePrintPDF}
-            className="mt-6 w-full py-3 bg-amber-400 hover:bg-amber-500 text-slate-950 font-extrabold text-xs rounded-2xl shadow-md flex items-center justify-center gap-2 transition-all"
+            onClick={() => window.print()}
+            className="mt-5 w-full py-2.5 bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 font-semibold text-xs rounded-xl shadow-xs flex items-center justify-center gap-2 transition-colors"
           >
             <Printer className="w-4 h-4" />
-            <span>Print Executive PDF Summary</span>
+            <span>Print PDF Overview</span>
           </button>
         </div>
       </div>

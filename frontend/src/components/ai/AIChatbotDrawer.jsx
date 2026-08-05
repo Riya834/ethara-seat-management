@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Send, Bot, Sparkles, User, MapPin, Building, ArrowRight } from 'lucide-react';
+import { X, Send, Bot, User } from 'lucide-react';
 import { aiService } from '../../services/api';
 
 const AIChatbotDrawer = ({ isOpen, onClose }) => {
@@ -7,7 +7,7 @@ const AIChatbotDrawer = ({ isOpen, onClose }) => {
   const [messages, setMessages] = useState([
     {
       sender: 'ai',
-      text: "👋 **Hello! I am Ethara Spatial AI Assistant.**\n\nHow can I assist you with seat allocations, employee spatial queries, or floor utilization metrics today?",
+      text: "👋 **Hello! I am Ethara Spatial AI Assistant.**\n\nHow can I assist you with seat allocations, employee spatial queries, or floor metrics today?",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -56,7 +56,7 @@ const AIChatbotDrawer = ({ isOpen, onClose }) => {
         ...prev,
         {
           sender: 'ai',
-          text: "⚠️ Sorry, I ran into an issue connecting to Ethara AI engine. Please try again.",
+          text: "⚠️ Issue querying Ethara AI engine.",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
       ]);
@@ -66,37 +66,32 @@ const AIChatbotDrawer = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/30 backdrop-blur-xs">
-      <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col justify-between border-l border-slate-200 animate-in slide-in-from-right duration-300">
+    <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/20 backdrop-blur-xs">
+      <div className="w-full max-w-md bg-white h-full shadow-xl flex flex-col justify-between border-l border-slate-200 animate-in slide-in-from-right duration-200">
         {/* Header */}
-        <div className="p-4 bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 flex items-center justify-between shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-slate-950 text-amber-400 flex items-center justify-center font-extrabold shadow-md">
-              <Bot className="w-6 h-6" />
+        <div className="p-4 bg-slate-900 text-white flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center font-bold">
+              <Bot className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-base leading-tight">Ethara Spatial AI</h3>
-              <p className="text-[11px] font-semibold opacity-90">Instant Intelligent Seat Query Engine</p>
+              <h3 className="font-extrabold text-sm">Ethara Spatial AI</h3>
+              <p className="text-[10px] text-slate-400 font-semibold">Intelligent Query Engine</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 text-slate-900 hover:bg-black/10 rounded-xl transition-colors"
-          >
+          <button onClick={onClose} className="p-1 text-slate-400 hover:text-white rounded-lg">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Quick Suggestion Pills */}
-        <div className="p-3 bg-amber-50/50 border-b border-amber-100 flex items-center gap-2 overflow-x-auto scrollbar-none">
-          <span className="text-[10px] font-extrabold text-amber-800 uppercase tracking-wider shrink-0 flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-amber-600" /> Prompts:
-          </span>
+        {/* Quick Prompts Bar */}
+        <div className="p-2.5 bg-slate-50 border-b border-slate-200 flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+          <span className="text-[10px] font-bold text-slate-400 uppercase shrink-0">Prompts:</span>
           {quickPrompts.map((p, idx) => (
             <button
               key={idx}
               onClick={() => handleSend(p)}
-              className="px-2.5 py-1 bg-white hover:bg-amber-100 text-slate-700 text-[11px] font-semibold rounded-full border border-amber-200 shadow-2xs whitespace-nowrap transition-colors"
+              className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 text-[11px] font-medium rounded-lg border border-slate-200 whitespace-nowrap transition-colors"
             >
               {p}
             </button>
@@ -104,21 +99,21 @@ const AIChatbotDrawer = ({ isOpen, onClose }) => {
         </div>
 
         {/* Messages Body */}
-        <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-[#f8f7f4]">
+        <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-[#f8fafc]">
           {messages.map((msg, index) => (
             <div
               key={index}
               className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
             >
               <div
-                className={`max-w-[88%] p-4 rounded-3xl text-xs leading-relaxed font-medium shadow-xs ${
+                className={`max-w-[88%] p-3 rounded-xl text-xs leading-relaxed font-medium shadow-2xs ${
                   msg.sender === 'user'
-                    ? 'bg-amber-400 text-slate-950 rounded-br-none font-semibold'
-                    : 'bg-white text-slate-800 border border-slate-200/80 rounded-bl-none'
+                    ? 'bg-slate-900 text-white rounded-br-none'
+                    : 'bg-white text-slate-800 border border-slate-200 rounded-bl-none'
                 }`}
               >
                 <div className="whitespace-pre-line">{msg.text}</div>
-                <span className="text-[9px] font-bold opacity-60 block mt-2 text-right">
+                <span className="text-[9px] font-semibold opacity-60 block mt-1.5 text-right">
                   {msg.timestamp}
                 </span>
               </div>
@@ -126,15 +121,15 @@ const AIChatbotDrawer = ({ isOpen, onClose }) => {
           ))}
 
           {loading && (
-            <div className="flex items-center gap-2 p-3 bg-white rounded-2xl border border-slate-200 text-xs font-semibold text-slate-500 w-fit">
-              <Bot className="w-4 h-4 text-amber-500 animate-spin" />
-              <span>Ethara AI is processing spatial query...</span>
+            <div className="flex items-center gap-2 p-2.5 bg-white rounded-xl border border-slate-200 text-xs font-semibold text-slate-500 w-fit">
+              <Bot className="w-4 h-4 text-slate-700 animate-spin" />
+              <span>Processing query...</span>
             </div>
           )}
         </div>
 
         {/* Input Bar */}
-        <div className="p-4 bg-white border-t border-slate-200">
+        <div className="p-3 bg-white border-t border-slate-200">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -146,13 +141,13 @@ const AIChatbotDrawer = ({ isOpen, onClose }) => {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask AI: e.g. Where is Rahul seated?"
-              className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-full text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
+              placeholder="Ask AI: Where is Rahul seated?"
+              className="flex-1 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400"
             />
             <button
               type="submit"
               disabled={loading || !input.trim()}
-              className="p-3 bg-amber-400 hover:bg-amber-500 text-slate-950 rounded-full shadow-md transition-transform active:scale-95 disabled:opacity-50"
+              className="p-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-xs transition-colors disabled:opacity-50"
             >
               <Send className="w-4 h-4" />
             </button>

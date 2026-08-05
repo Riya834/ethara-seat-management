@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, MapPin, User, Briefcase, Calendar, CheckCircle2, UserPlus, RefreshCw, LogOut } from 'lucide-react';
+import { X, MapPin, Briefcase, Calendar, CheckCircle2, LogOut } from 'lucide-react';
 import { seatService, employeeService } from '../../services/api';
 import { useNotification } from '../../context/NotificationContext';
 
@@ -7,7 +7,6 @@ const SeatModal = ({ seat, isOpen, onClose, onRefresh }) => {
   const { showToast } = useNotification();
   const [assignSearch, setAssignSearch] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
   const [loadingAction, setLoadingAction] = useState(false);
 
   if (!isOpen || !seat) return null;
@@ -15,7 +14,6 @@ const SeatModal = ({ seat, isOpen, onClose, onRefresh }) => {
   const handleSearchEmployees = async (query) => {
     setAssignSearch(query);
     if (query.trim().length >= 2) {
-      setIsSearching(true);
       try {
         const res = await employeeService.getEmployees({ search: query, limit: 5 });
         if (res.success) {
@@ -23,8 +21,6 @@ const SeatModal = ({ seat, isOpen, onClose, onRefresh }) => {
         }
       } catch (err) {
         console.error(err);
-      } finally {
-        setIsSearching(false);
       }
     } else {
       setSearchResults([]);
@@ -64,32 +60,29 @@ const SeatModal = ({ seat, isOpen, onClose, onRefresh }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-      <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-slate-100 relative animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-xs">
+      <div className="bg-white rounded-2xl p-5 max-w-md w-full shadow-lg border border-slate-200 relative animate-in fade-in duration-150">
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-400 flex items-center justify-center text-slate-950 font-extrabold shadow-sm">
-              <MapPin className="w-5 h-5" />
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold">
+              <MapPin className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-extrabold text-lg text-slate-900 leading-tight">Seat {seat.seatCode}</h3>
-              <p className="text-xs text-slate-500 font-semibold">Floor {seat.floorNumber} • {seat.zone}</p>
+              <h3 className="font-extrabold text-base text-slate-900 leading-tight">Seat {seat.seatCode}</h3>
+              <p className="text-[11px] text-slate-500 font-medium">Floor {seat.floorNumber} • {seat.zone}</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100"
-          >
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg">
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Current Occupant Details */}
         {seat.status === 'Occupied' && seat.employeeName ? (
-          <div className="my-5 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-full bg-amber-100 border border-amber-300 overflow-hidden shrink-0">
+          <div className="my-4 p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+            <div className="flex items-center gap-3 mb-2.5">
+              <div className="w-9 h-9 rounded-full bg-slate-200 overflow-hidden shrink-0">
                 <img
                   src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${seat.employeeName}`}
                   alt={seat.employeeName}
@@ -97,48 +90,47 @@ const SeatModal = ({ seat, isOpen, onClose, onRefresh }) => {
                 />
               </div>
               <div>
-                <h4 className="font-extrabold text-sm text-slate-900">{seat.employeeName}</h4>
-                <p className="text-xs font-semibold text-slate-500">{seat.employeeId}</p>
+                <h4 className="font-bold text-xs text-slate-900">{seat.employeeName}</h4>
+                <p className="text-[10px] font-semibold text-slate-500">{seat.employeeId}</p>
               </div>
             </div>
 
-            <div className="space-y-1.5 text-xs text-slate-600 font-medium">
-              <p className="flex items-center gap-2">
+            <div className="space-y-1 text-xs text-slate-600 font-medium">
+              <p className="flex items-center gap-1.5">
                 <Briefcase className="w-3.5 h-3.5 text-slate-400" />
                 <span>Project: <strong>{seat.projectName || 'N/A'}</strong></span>
               </p>
-              <p className="flex items-center gap-2">
+              <p className="flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                <span>Allocated on: <strong>{seat.allocationDate || 'Recent'}</strong></span>
+                <span>Allocated: <strong>{seat.allocationDate || 'Recent'}</strong></span>
               </p>
             </div>
 
-            {/* Release Button */}
-            <div className="mt-4 pt-3 border-t border-slate-200/60 flex justify-end">
+            <div className="mt-3 pt-2.5 border-t border-slate-200 flex justify-end">
               <button
                 disabled={loadingAction}
                 onClick={handleReleaseSeat}
-                className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 flex items-center gap-2 transition-colors"
+                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs rounded-lg border border-slate-200 flex items-center gap-1.5 transition-colors"
               >
-                <LogOut className="w-3.5 h-3.5" />
+                <LogOut className="w-3.5 h-3.5 text-slate-600" />
                 <span>Release Seat</span>
               </button>
             </div>
           </div>
         ) : (
-          <div className="my-5 p-4 bg-emerald-50/80 rounded-2xl border border-emerald-100 text-center">
-            <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
-            <h4 className="font-extrabold text-sm text-emerald-900">Seat is Currently Available</h4>
-            <p className="text-xs text-emerald-700 mt-1 font-medium">
-              Assign an employee to this vacant seat using the search below.
+          <div className="my-4 p-3.5 bg-emerald-50/60 rounded-xl border border-emerald-200 text-center">
+            <CheckCircle2 className="w-6 h-6 text-emerald-700 mx-auto mb-1" />
+            <h4 className="font-bold text-xs text-emerald-900">Seat Available</h4>
+            <p className="text-[11px] text-emerald-700 font-medium mt-0.5">
+              Select an employee to allocate this seat.
             </p>
           </div>
         )}
 
         {/* Assign / Transfer Section */}
-        <div className="space-y-3">
-          <label className="text-xs font-bold text-slate-700 block uppercase tracking-wider">
-            {seat.status === 'Occupied' ? 'Re-assign / Transfer Seat' : 'Assign Employee to Seat'}
+        <div className="space-y-2">
+          <label className="text-[11px] font-bold text-slate-700 block uppercase tracking-wider">
+            {seat.status === 'Occupied' ? 'Re-assign / Transfer' : 'Assign Employee'}
           </label>
 
           <input
@@ -146,22 +138,22 @@ const SeatModal = ({ seat, isOpen, onClose, onRefresh }) => {
             value={assignSearch}
             onChange={(e) => handleSearchEmployees(e.target.value)}
             placeholder="Type employee name or EMP ID..."
-            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
+            className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400"
           />
 
           {searchResults.length > 0 && (
-            <div className="max-h-40 overflow-y-auto space-y-1 bg-white border border-slate-200 rounded-2xl p-2 shadow-lg">
+            <div className="max-h-36 overflow-y-auto space-y-1 bg-white border border-slate-200 rounded-xl p-1.5 shadow-sm">
               {searchResults.map((emp) => (
                 <div
                   key={emp.id}
                   onClick={() => handleAssignToSeat(emp.employeeId)}
-                  className="p-2 hover:bg-amber-50 rounded-xl cursor-pointer flex items-center justify-between text-xs transition-colors"
+                  className="p-1.5 hover:bg-slate-100 rounded-lg cursor-pointer flex items-center justify-between text-xs transition-colors"
                 >
                   <div>
-                    <p className="font-extrabold text-slate-900">{emp.name}</p>
+                    <p className="font-bold text-slate-900">{emp.name}</p>
                     <p className="text-[10px] text-slate-500">{emp.employeeId} • {emp.department}</p>
                   </div>
-                  <button className="px-3 py-1 bg-amber-400 text-slate-950 font-bold text-[11px] rounded-lg">
+                  <button className="px-2.5 py-1 bg-slate-900 text-white font-bold text-[10px] rounded-md">
                     Select
                   </button>
                 </div>

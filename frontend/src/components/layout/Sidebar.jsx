@@ -10,8 +10,7 @@ import {
   FileText, 
   Bot, 
   LogOut,
-  Building2,
-  Sparkles
+  Building2
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -26,28 +25,28 @@ const Sidebar = () => {
     { label: 'Floors & Zones', path: '/floors-zones', icon: Layers },
     { label: 'New Joiners', path: '/new-joiners', icon: UserPlus },
     { label: 'Reports', path: '/reports', icon: FileText },
-    { label: 'AI Assistant', path: '/ai-chat', icon: Bot, badge: 'AI 2.0' },
+    { label: 'AI Assistant', path: '/ai-chat', icon: Bot, badge: 'AI' },
   ];
 
   return (
-    <aside className="w-64 h-[calc(100vh-2rem)] sticky top-4 my-4 ml-4 bg-white/90 backdrop-blur-md rounded-3xl p-5 shadow-[0_15px_35px_-10px_rgba(0,0,0,0.05)] border border-black/[0.04] flex flex-col justify-between z-30 shrink-0">
+    <aside className="w-64 h-[calc(100vh-2rem)] sticky top-4 my-4 ml-4 bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col justify-between z-30 shrink-0">
       <div>
-        {/* Brand Logo matching Eduhouse styling */}
-        <div className="flex items-center gap-3 px-3 py-2 mb-8">
-          <div className="w-10 h-10 rounded-2xl bg-amber-400 flex items-center justify-center text-slate-900 shadow-md shadow-amber-400/30 font-extrabold text-xl">
-            <Building2 className="w-6 h-6 stroke-[2.5]" />
+        {/* Brand Logo - Minimal Slate */}
+        <div className="flex items-center gap-3 px-2 py-1 mb-8">
+          <div className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center font-extrabold text-lg">
+            <Building2 className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="font-extrabold text-lg tracking-tight text-slate-900 leading-none">
-              Ethara<span className="text-amber-500">HQ</span>
+            <h1 className="font-extrabold text-base tracking-tight text-slate-900 leading-none">
+              Ethara<span className="text-slate-500">HQ</span>
             </h1>
-            <p className="text-[10px] font-semibold tracking-wider text-slate-400 uppercase mt-0.5">Spatial Management</p>
+            <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mt-0.5">Spatial Management</p>
           </div>
         </div>
 
-        {/* Navigation Section */}
+        {/* Navigation Items */}
         <div className="space-y-1">
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-2">Main Menu</p>
+          <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider px-3 mb-2">Navigation</p>
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -55,20 +54,19 @@ const Sidebar = () => {
                 key={item.path}
                 to={item.path}
                 className={({ isActive }) =>
-                  `flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-200 ${
+                  `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 ${
                     isActive
-                      ? 'bg-amber-400 text-slate-900 shadow-lg shadow-amber-400/25 scale-[1.02]'
+                      ? 'bg-slate-900 text-white shadow-xs font-bold'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
                   }`
                 }
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5">
                   <Icon className="w-4 h-4" />
                   <span>{item.label}</span>
                 </div>
                 {item.badge && (
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-600 text-white flex items-center gap-1 shadow-sm">
-                    <Sparkles className="w-2.5 h-2.5" />
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
                     {item.badge}
                   </span>
                 )}
@@ -78,18 +76,18 @@ const Sidebar = () => {
         </div>
       </div>
 
-      {/* User Profile Card at Bottom */}
+      {/* User Footer */}
       <div className="pt-4 border-t border-slate-100">
-        <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
+        <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between">
           <div className="flex items-center gap-2.5 min-w-0">
             <img
               src={user?.employeeDetails?.photo || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name || 'User'}`}
-              alt="User Avatar"
-              className="w-9 h-9 rounded-full bg-amber-100 border border-amber-300 object-cover shrink-0"
+              alt="Avatar"
+              className="w-8 h-8 rounded-full bg-slate-200 border border-slate-300 object-cover shrink-0"
             />
             <div className="truncate">
-              <p className="text-xs font-bold text-slate-900 truncate">{user?.name || 'Administrator'}</p>
-              <span className="inline-block text-[10px] font-semibold text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded-full mt-0.5">
+              <p className="text-xs font-bold text-slate-900 truncate">{user?.name || 'Admin User'}</p>
+              <span className="inline-block text-[10px] font-semibold text-slate-500">
                 {user?.role || 'Admin'}
               </span>
             </div>
@@ -98,7 +96,7 @@ const Sidebar = () => {
           <button
             onClick={logout}
             title="Logout"
-            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"
+            className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-200/60 rounded-lg transition-colors"
           >
             <LogOut className="w-4 h-4" />
           </button>
