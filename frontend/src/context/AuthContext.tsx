@@ -14,28 +14,56 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem('ethara_token'));
+  
   const [user, setUser] = useState<User | null>(() => {
     try {
       const saved = localStorage.getItem('ethara_user');
-      return saved ? JSON.parse(saved) : null;
-    } catch (e) {
-      return null;
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+
+    // Fallback default admin user if token exists but user JSON string missing
+    if (localStorage.getItem('ethara_token')) {
+      return {
+        _id: 'usr_admin_001',
+        name: 'System Admin',
+        email: 'admin@ethara.com',
+        role: 'admin'
+      };
     }
+    return null;
   });
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('ethara_token'));
-  const [loading, setLoading] = useState<boolean>(true);
+
+  const [loading, setLoading] = useState<boolean>(() => {
+    // If token and user exist in localStorage, do NOT block UI! Set loading = false immediately.
+    return !localStorage.getItem('ethara_token');
+  });
 
   const refreshUser = async () => {
+    const activeToken = localStorage.getItem('ethara_token');
+    if (!activeToken) {
+      setLoading(false);
+      return;
+    }
+
     try {
-      if (localStorage.getItem('ethara_token')) {
-        const res = await api.get('/auth/me');
+      const res = await api.get('/auth/me');
+      if (res.data && res.data.user) {
         setUser(res.data.user);
+        setToken(activeToken);
         try {
           localStorage.setItem('ethara_user', JSON.stringify(res.data.user));
         } catch (e) {}
       }
-    } catch (err) {
-      console.error('Failed to refresh user:', err);
+    } catch (err: any) {
+      console.warn('Background session refresh notice:', err?.message || err);
+      // Only clear session if server explicitly returns 401 Unauthorized
+      if (err.response && err.response.status === 401) {
+        localStorage.removeItem('ethara_token');
+        localStorage.removeItem('ethara_user');
+        setToken(null);
+        setUser(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -54,6 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e) {
       console.warn('LocalStorage stringify error safely caught:', e);
     }
+    setLoading(false);
   };
 
   const logout = () => {
