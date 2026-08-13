@@ -63,6 +63,8 @@ export const autoSeedIfEmpty = async () => {
       email: 'admin@ethara.com',
       designation: 'VP Operations',
       department: 'Operations',
+      team: 'Operations Team',
+      joiningDate: new Date(),
       status: 'active'
     });
     await User.create({ name: 'System Admin', email: 'admin@ethara.com', passwordHash: defaultPasswordHash, role: 'admin', employeeId: adminEmp._id });
@@ -73,6 +75,8 @@ export const autoSeedIfEmpty = async () => {
       email: 'hr@ethara.com',
       designation: 'Head of HR',
       department: 'Human Resources',
+      team: 'Talent Management',
+      joiningDate: new Date(),
       status: 'active'
     });
     await User.create({ name: 'Sarah HR Lead', email: 'hr@ethara.com', passwordHash: defaultPasswordHash, role: 'hr', employeeId: hrEmp._id });
@@ -83,17 +87,33 @@ export const autoSeedIfEmpty = async () => {
       email: 'pm.atlas@ethara.com',
       designation: 'Senior PM',
       department: 'Engineering',
+      team: 'AI Core Team',
       projectId: projectAtlas._id,
+      joiningDate: new Date(),
       status: 'active'
     });
     await User.create({ name: 'Alex PM', email: 'pm.atlas@ethara.com', passwordHash: defaultPasswordHash, role: 'pm', employeeId: pmEmp._id });
 
-    const empPooja = await Employee.create({
+    const johnEmp = await Employee.create({
       employeeId: 'ETH-00004',
+      name: 'John Doe',
+      email: 'emp.john@ethara.com',
+      designation: 'Senior Engineer',
+      department: 'Engineering',
+      team: 'AI Core Team',
+      joiningDate: new Date(),
+      status: 'active'
+    });
+    await User.create({ name: 'John Doe', email: 'emp.john@ethara.com', passwordHash: defaultPasswordHash, role: 'employee', employeeId: johnEmp._id });
+
+    const empPooja = await Employee.create({
+      employeeId: 'ETH-99999',
       name: 'Pooja Sharma',
       email: 'pooja@ethara.com',
       designation: 'Senior Engineer',
       department: 'Engineering',
+      team: 'AI Core Team',
+      joiningDate: new Date(),
       status: 'active'
     });
     await User.create({ name: 'Pooja Sharma', email: 'pooja@ethara.com', passwordHash: defaultPasswordHash, role: 'employee', employeeId: empPooja._id });
