@@ -78,8 +78,8 @@ export const LoginPage: React.FC = () => {
     try {
       const res = await api.post('/auth/login', { email, password });
       login(res.data.token, res.data.user);
-      const targetPath = res.data.user.role === 'employee' ? '/directory' : '/dashboard';
-      window.location.href = targetPath;
+      const targetPath = res.data.user?.role === 'employee' ? '/directory' : '/dashboard';
+      navigate(targetPath, { replace: true });
     } catch (err: any) {
       setError(
         err.response?.data?.message ||
@@ -108,8 +108,8 @@ export const LoginPage: React.FC = () => {
 
       setSuccessMsg('Account created successfully!');
       login(res.data.token, res.data.user);
-      const targetPath = res.data.user.role === 'employee' ? '/directory' : '/dashboard';
-      window.location.href = targetPath;
+      const targetPath = res.data.user?.role === 'employee' ? '/directory' : '/dashboard';
+      navigate(targetPath, { replace: true });
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed. Email may already exist.');
     } finally {
