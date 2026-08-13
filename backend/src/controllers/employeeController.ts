@@ -17,6 +17,14 @@ const getActor = (req: AuthRequest) => {
   );
 };
 
+// High-performance in-memory query cache for 5000+ employee dataset
+const queryCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL_MS = 15000; // 15 seconds
+
+export const invalidateEmployeeCache = () => {
+  queryCache.clear();
+};
+
 export const getEmployees = async (req: AuthRequest, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
@@ -24,6 +32,12 @@ export const getEmployees = async (req: AuthRequest, res: Response) => {
     const skip = (page - 1) * limit;
 
     const { search, department, projectId, status, seatAllocationStatus, team } = req.query;
+
+    const cacheKey = JSON.stringify({ page, limit, search, department, projectId, status, seatAllocationStatus, team });
+    const cached = queryCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      return res.json(cached.data);
+    }
 
     if (Employee.db.readyState === 1) {
       const filter: any = {};
@@ -43,25 +57,35 @@ export const getEmployees = async (req: AuthRequest, res: Response) => {
       if (seatAllocationStatus) filter.seatAllocationStatus = new RegExp(`^${seatAllocationStatus}$`, 'i');
       if (team) filter.team = new RegExp(`^${team}$`, 'i');
 
-      const total = await Employee.countDocuments(filter);
-      const employees = await Employee.find(filter)
-        .populate('projectId', 'name code')
-        .populate('managerId', 'name employeeId designation')
-        .populate({
-          path: 'seatId',
-          populate: [
-            { path: 'floorId', select: 'floorNumber name' },
-            { path: 'zoneId', select: 'zoneName' }
-          ]
-        })
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit);
+      // Execute count & find concurrently in parallel with 2500ms maxTimeMS budget
+      const [total, employees] = await Promise.all([
+        Employee.countDocuments(filter).maxTimeMS(2500),
+        Employee.find(filter)
+          .maxTimeMS(2500)
+          .lean()
+          .populate('projectId', 'name code')
+          .populate('managerId', 'name employeeId designation')
+          .populate({
+            path: 'seatId',
+            select: 'seatNumber floorId zoneId',
+            populate: [
+              { path: 'floorId', select: 'floorNumber name' },
+              { path: 'zoneId', select: 'zoneName' }
+            ]
+          })
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit)
+      ]);
 
-      return res.json({
+      const resultPayload = {
         data: employees,
         pagination: { total, page, limit, pages: Math.ceil(total / limit) }
-      });
+      };
+
+      queryCache.set(cacheKey, { data: resultPayload, timestamp: Date.now() });
+
+      return res.json(resultPayload);
     }
 
     // In-memory Fallback
