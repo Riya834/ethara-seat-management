@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+import path from 'path';
+import fs from 'fs';
 
 import authRoutes from './routes/authRoutes';
 import employeeRoutes from './routes/employeeRoutes';
@@ -30,6 +32,12 @@ app.use(
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve frontend static assets if built together
+const frontendDistPath = path.join(__dirname, '../../frontend/dist');
+if (fs.existsSync(frontendDistPath)) {
+  app.use(express.static(frontendDistPath));
+}
 
 // Root Route
 app.get('/', (req, res) => {
@@ -75,13 +83,44 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/audit', auditRoutes);
 
-// 404 Handler
-app.use('*', (req, res) => {
+// API 404 Handler
+app.use('/api/*', (req, res) => {
   res.status(404).json({
     success: false,
-    message: 'Route not found',
+    message: 'API Endpoint not found',
     requestedUrl: req.originalUrl
   });
+});
+
+// Single Page Application (SPA) Wildcard Fallback for /login, /signup, /dashboard, etc.
+app.use('*', (req, res) => {
+  const indexPath = path.join(frontendDistPath, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    return res.sendFile(indexPath);
+  }
+
+  res.status(200).send(`
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <title>Ethara Workplace Portal - Active</title>
+        <style>
+          body { font-family: system-ui, sans-serif; background: #FAF7F2; color: #0F172A; text-align: center; padding: 50px; }
+          .card { background: white; max-width: 500px; margin: 0 auto; padding: 30px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+          .btn { display: inline-block; background: #FBC48B; color: #0F172A; padding: 12px 24px; border-radius: 99px; text-decoration: none; font-weight: bold; margin-top: 15px; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <h2>Ethara Backend Server Active</h2>
+          <p>Database Connected & Healthy</p>
+          <p>Requested Path: <code>${req.originalUrl}</code></p>
+          <a href="/api/health" class="btn">View API Health Status</a>
+        </div>
+      </body>
+    </html>
+  `);
 });
 
 // Global Error Handler
