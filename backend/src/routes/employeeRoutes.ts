@@ -17,9 +17,9 @@ router.get('/', getEmployees);
 router.get('/search', searchEmployees);
 router.get('/:id', getEmployeeById);
 
-// Admin & HR can create, update, and delete employees
+// Admin can delete employees; HR/PM/Employee get 403 Forbidden
 router.post('/', authorizeRoles('admin', 'hr'), createEmployee);
 router.put('/:id', authorizeRoles('admin', 'hr'), updateEmployee);
-router.delete('/:id', authorizeRoles('admin', 'hr'), deleteEmployee);
+router.delete('/:id', authorizeRoles('admin'), deleteEmployee);
 
 export default router;
