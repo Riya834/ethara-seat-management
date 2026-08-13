@@ -31,17 +31,29 @@ exports.app.use((0, cors_1.default)({
 }));
 exports.app.use(express_1.default.json());
 exports.app.use(express_1.default.urlencoded({ extended: true }));
-// Serve frontend static assets if built together
-const frontendDistPath = path_1.default.join(__dirname, '../../frontend/dist');
-if (fs_1.default.existsSync(frontendDistPath)) {
-    exports.app.use(express_1.default.static(frontendDistPath));
-}
-// Root Route
+// Root Route - Always returns clean API Backend status when accessing the backend URL!
 exports.app.get('/', (req, res) => {
+    const isConnected = mongoose_1.default.connection.readyState === 1;
+    const host = mongoose_1.default.connection.host || 'none';
     res.json({
         success: true,
-        message: 'Ethara Seat Management Backend Running',
-        health: '/api/health',
+        message: 'Ethara Seat Management Backend REST API Active',
+        version: '1.0.0',
+        database: {
+            connected: isConnected,
+            type: isConnected
+                ? host.includes('mongodb.net') || host.includes('cluster0')
+                    ? 'MongoDB Atlas (Cloud)'
+                    : 'Local MongoDB'
+                : 'In-Memory Fallback'
+        },
+        endpoints: {
+            health: '/api/health',
+            auth: '/api/auth',
+            employees: '/api/employees',
+            seats: '/api/seats',
+            projects: '/api/projects'
+        },
         timestamp: new Date().toISOString()
     });
 });
@@ -66,6 +78,11 @@ exports.app.get('/api/health', (req, res) => {
         }
     });
 });
+// Serve frontend static assets if built together
+const frontendDistPath = path_1.default.join(__dirname, '../../frontend/dist');
+if (fs_1.default.existsSync(frontendDistPath)) {
+    exports.app.use(express_1.default.static(frontendDistPath));
+}
 // API Routes
 exports.app.use('/api/auth', authRoutes_1.default);
 exports.app.use('/api/employees', employeeRoutes_1.default);
@@ -84,7 +101,7 @@ exports.app.use('/api/*', (req, res) => {
         requestedUrl: req.originalUrl
     });
 });
-// Single Page Application (SPA) Wildcard Fallback for /login, /signup, /dashboard, etc.
+// Single Page Application (SPA) Wildcard Fallback for non-API frontend routes
 exports.app.use('*', (req, res) => {
     const indexPath = path_1.default.join(frontendDistPath, 'index.html');
     if (fs_1.default.existsSync(indexPath)) {
@@ -95,7 +112,7 @@ exports.app.use('*', (req, res) => {
     <html lang="en">
       <head>
         <meta charset="UTF-8">
-        <title>Ethara Workplace Portal - Active</title>
+        <title>Ethara Backend API</title>
         <style>
           body { font-family: system-ui, sans-serif; background: #FAF7F2; color: #0F172A; text-align: center; padding: 50px; }
           .card { background: white; max-width: 500px; margin: 0 auto; padding: 30px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
@@ -125,7 +142,7 @@ exports.app.use((err, req, res, next) => {
 const startServer = async () => {
     const PORT = process.env.PORT || 5000;
     const MONGODB_URI = process.env.MONGODB_URI ||
-        'mongodb+srv://new_seatManagement:Ethara1230@cluster0.ty7ichr.mongodb.net/ethara_seat_db?retryWrites=true&w=majority&appName=Cluster0';
+        'mongodb://127.0.0.1:27017/ethara_seat_db';
     if (process.env.NODE_ENV !== 'test') {
         let connected = false;
         try {

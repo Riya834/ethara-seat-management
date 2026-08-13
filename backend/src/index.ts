@@ -33,18 +33,30 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve frontend static assets if built together
-const frontendDistPath = path.join(__dirname, '../../frontend/dist');
-if (fs.existsSync(frontendDistPath)) {
-  app.use(express.static(frontendDistPath));
-}
-
-// Root Route
+// Root Route - Always returns clean API Backend status when accessing the backend URL!
 app.get('/', (req, res) => {
+  const isConnected = mongoose.connection.readyState === 1;
+  const host = mongoose.connection.host || 'none';
+
   res.json({
     success: true,
-    message: 'Ethara Seat Management Backend Running',
-    health: '/api/health',
+    message: 'Ethara Seat Management Backend REST API Active',
+    version: '1.0.0',
+    database: {
+      connected: isConnected,
+      type: isConnected
+        ? host.includes('mongodb.net') || host.includes('cluster0')
+          ? 'MongoDB Atlas (Cloud)'
+          : 'Local MongoDB'
+        : 'In-Memory Fallback'
+    },
+    endpoints: {
+      health: '/api/health',
+      auth: '/api/auth',
+      employees: '/api/employees',
+      seats: '/api/seats',
+      projects: '/api/projects'
+    },
     timestamp: new Date().toISOString()
   });
 });
@@ -72,6 +84,12 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Serve frontend static assets if built together
+const frontendDistPath = path.join(__dirname, '../../frontend/dist');
+if (fs.existsSync(frontendDistPath)) {
+  app.use(express.static(frontendDistPath));
+}
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/employees', employeeRoutes);
@@ -92,7 +110,7 @@ app.use('/api/*', (req, res) => {
   });
 });
 
-// Single Page Application (SPA) Wildcard Fallback for /login, /signup, /dashboard, etc.
+// Single Page Application (SPA) Wildcard Fallback for non-API frontend routes
 app.use('*', (req, res) => {
   const indexPath = path.join(frontendDistPath, 'index.html');
   if (fs.existsSync(indexPath)) {
@@ -104,7 +122,7 @@ app.use('*', (req, res) => {
     <html lang="en">
       <head>
         <meta charset="UTF-8">
-        <title>Ethara Workplace Portal - Active</title>
+        <title>Ethara Backend API</title>
         <style>
           body { font-family: system-ui, sans-serif; background: #FAF7F2; color: #0F172A; text-align: center; padding: 50px; }
           .card { background: white; max-width: 500px; margin: 0 auto; padding: 30px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
