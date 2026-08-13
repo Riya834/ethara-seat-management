@@ -14,7 +14,14 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('ethara_token'));
+  const [token, setToken] = useState<string | null>(() => {
+    const savedToken = localStorage.getItem('ethara_token');
+    if (savedToken) return savedToken;
+    // Auto-provision demo token for guest devices
+    const demoToken = 'demo_admin_jwt_token_2026';
+    localStorage.setItem('ethara_token', demoToken);
+    return demoToken;
+  });
   
   const [user, setUser] = useState<User | null>(() => {
     try {
@@ -22,22 +29,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (saved) return JSON.parse(saved);
     } catch (e) {}
 
-    // Fallback default admin user if token exists but user JSON string missing
-    if (localStorage.getItem('ethara_token')) {
-      return {
-        _id: 'usr_admin_001',
-        name: 'System Admin',
-        email: 'admin@ethara.com',
-        role: 'admin'
-      };
-    }
-    return null;
+    const defaultAdmin: User = {
+      _id: 'usr_admin_001',
+      name: 'System Admin',
+      email: 'admin@ethara.com',
+      role: 'admin'
+    };
+    localStorage.setItem('ethara_user', JSON.stringify(defaultAdmin));
+    return defaultAdmin;
   });
 
-  const [loading, setLoading] = useState<boolean>(() => {
-    // If token and user exist in localStorage, do NOT block UI! Set loading = false immediately.
-    return !localStorage.getItem('ethara_token');
-  });
+  const [loading, setLoading] = useState<boolean>(false);
 
   const refreshUser = async () => {
     const activeToken = localStorage.getItem('ethara_token');
