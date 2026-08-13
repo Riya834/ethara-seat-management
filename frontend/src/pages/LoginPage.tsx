@@ -24,9 +24,9 @@ export const LoginPage: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
   useEffect(() => {
     if (user) {
       const targetPath = user.role === 'employee' ? '/directory' : '/dashboard';
-      navigate(targetPath, { replace: true });
+      window.location.href = targetPath;
     }
-  }, [user, navigate]);
+  }, [user]);
 
   // Sign In fields
   const [email, setEmail] = useState('');
@@ -37,7 +37,7 @@ export const LoginPage: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
   const [name, setName] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
-  const [role, setRole] = useState<'admin' | 'hr' | 'pm' | 'employee'>('employee');
+  const [role, setRole] = useState<'admin' | 'hr' | 'pm' | 'employee'>('admin');
   const [department, setDepartment] = useState('Engineering');
   const [designation, setDesignation] = useState('Senior Specialist');
 
@@ -55,7 +55,7 @@ export const LoginPage: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
       const res = await api.post('/auth/login', { email, password });
       login(res.data.token, res.data.user);
       const targetPath = res.data.user?.role === 'employee' ? '/directory' : '/dashboard';
-      navigate(targetPath, { replace: true });
+      window.location.href = targetPath;
     } catch (err: any) {
       setError(
         err.response?.data?.message ||
@@ -82,10 +82,10 @@ export const LoginPage: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
         designation
       });
 
-      setSuccessMsg('Account created successfully!');
+      setSuccessMsg('Account created successfully! Redirecting...');
       login(res.data.token, res.data.user);
       const targetPath = res.data.user?.role === 'employee' ? '/directory' : '/dashboard';
-      navigate(targetPath, { replace: true });
+      window.location.href = targetPath;
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed. Email may already exist.');
     } finally {
