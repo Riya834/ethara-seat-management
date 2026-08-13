@@ -33,15 +33,15 @@ const getEmployees = async (req, res) => {
                 ];
             }
             if (department)
-                filter.department = department;
+                filter.department = new RegExp(`^${department}$`, 'i');
             if (projectId && projectId !== '')
                 filter.projectId = projectId;
             if (status)
-                filter.status = status;
+                filter.status = new RegExp(`^${status}$`, 'i');
             if (seatAllocationStatus)
-                filter.seatAllocationStatus = seatAllocationStatus;
+                filter.seatAllocationStatus = new RegExp(`^${seatAllocationStatus}$`, 'i');
             if (team)
-                filter.team = team;
+                filter.team = new RegExp(`^${team}$`, 'i');
             const total = await Employee_1.Employee.countDocuments(filter);
             const employees = await Employee_1.Employee.find(filter)
                 .populate('projectId', 'name code')

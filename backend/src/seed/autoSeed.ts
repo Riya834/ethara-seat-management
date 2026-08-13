@@ -5,11 +5,19 @@ import { Project } from '../models/Project';
 import { Floor, Zone } from '../models/FloorZone';
 import { Seat } from '../models/Seat';
 
+import { seed5000EmployeesToAtlas } from './seed5000InAtlas';
+
 export const autoSeedIfEmpty = async () => {
   try {
+    const empCount = await Employee.countDocuments();
+    if (empCount < 50) {
+      console.log(`Database employee count is ${empCount}. Populating 5,000 workforce records...`);
+      await seed5000EmployeesToAtlas();
+    }
+
     const userCount = await User.countDocuments();
     if (userCount > 0) {
-      console.log(`Database initialized with ${userCount} users. Auto-seed skipped.`);
+      console.log(`Database initialized with ${userCount} users and ${await Employee.countDocuments()} employees.`);
       return;
     }
 

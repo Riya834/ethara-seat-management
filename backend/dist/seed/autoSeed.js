@@ -10,11 +10,17 @@ const Employee_1 = require("../models/Employee");
 const Project_1 = require("../models/Project");
 const FloorZone_1 = require("../models/FloorZone");
 const Seat_1 = require("../models/Seat");
+const seed5000InAtlas_1 = require("./seed5000InAtlas");
 const autoSeedIfEmpty = async () => {
     try {
+        const empCount = await Employee_1.Employee.countDocuments();
+        if (empCount < 50) {
+            console.log(`Database employee count is ${empCount}. Populating 5,000 workforce records...`);
+            await (0, seed5000InAtlas_1.seed5000EmployeesToAtlas)();
+        }
         const userCount = await User_1.User.countDocuments();
         if (userCount > 0) {
-            console.log(`Database initialized with ${userCount} users. Auto-seed skipped.`);
+            console.log(`Database initialized with ${userCount} users and ${await Employee_1.Employee.countDocuments()} employees.`);
             return;
         }
         console.log('Database empty! Auto-seeding default accounts and workforce data...');

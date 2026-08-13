@@ -37,11 +37,11 @@ export const getEmployees = async (req: AuthRequest, res: Response) => {
           { department: regex }
         ];
       }
-      if (department) filter.department = department;
+      if (department) filter.department = new RegExp(`^${department}$`, 'i');
       if (projectId && projectId !== '') filter.projectId = projectId;
-      if (status) filter.status = status;
-      if (seatAllocationStatus) filter.seatAllocationStatus = seatAllocationStatus;
-      if (team) filter.team = team;
+      if (status) filter.status = new RegExp(`^${status}$`, 'i');
+      if (seatAllocationStatus) filter.seatAllocationStatus = new RegExp(`^${seatAllocationStatus}$`, 'i');
+      if (team) filter.team = new RegExp(`^${team}$`, 'i');
 
       const total = await Employee.countDocuments(filter);
       const employees = await Employee.find(filter)
