@@ -1,8 +1,9 @@
 import axios from 'axios';
 
 const getBaseURL = () => {
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
+  const meta = import.meta as any;
+  if (meta && meta.env && meta.env.VITE_API_URL) {
+    return meta.env.VITE_API_URL;
   }
   if (typeof window !== 'undefined') {
     const saved = localStorage.getItem('ethara_backend_url');
@@ -20,9 +21,9 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    // Dynamic URL check in case environment variable or localStorage updated
-    if (import.meta.env.VITE_API_URL) {
-      config.baseURL = import.meta.env.VITE_API_URL;
+    const meta = import.meta as any;
+    if (meta && meta.env && meta.env.VITE_API_URL) {
+      config.baseURL = meta.env.VITE_API_URL;
     } else if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('ethara_backend_url');
       if (saved) config.baseURL = saved;
