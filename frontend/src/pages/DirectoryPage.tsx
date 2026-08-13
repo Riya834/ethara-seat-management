@@ -85,12 +85,19 @@ export const DirectoryPage: React.FC = () => {
       if (seatAllocationStatus) params.append('seatAllocationStatus', seatAllocationStatus);
 
       const res = await api.get(`/employees?${params.toString()}`);
-      setEmployees(res.data.data);
-      if (res.data.data.length > 0 && !selectedRowId) {
-        setSelectedRowId(res.data.data[0]._id);
+      const list = Array.isArray(res.data)
+        ? res.data
+        : res.data?.data || res.data?.employees || [];
+      const total = res.data?.pagination?.total ?? (Array.isArray(res.data) ? res.data.length : list.length);
+      const pages = res.data?.pagination?.pages ?? Math.max(1, Math.ceil(total / limit));
+
+      setEmployees(list);
+      setTotalRecords(total);
+      setTotalPages(pages);
+
+      if (list.length > 0 && !selectedRowId) {
+        setSelectedRowId(list[0]._id);
       }
-      setTotalPages(res.data.pagination.pages);
-      setTotalRecords(res.data.pagination.total);
     } catch (err) {
       console.error('Failed to load employees:', err);
     } finally {
@@ -208,12 +215,12 @@ export const DirectoryPage: React.FC = () => {
             }}
             className={`px-3.5 py-1.5 text-xs font-bold rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
               status === 'active'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'bg-emerald-100/90 hover:bg-emerald-200 text-emerald-900 border border-emerald-200'
+                ? 'bg-slate-900 text-emerald-400 border border-slate-800 shadow-xs'
+                : 'bg-slate-100/80 hover:bg-slate-100 text-slate-700 font-semibold'
             }`}
           >
             <UserCheck className="w-3.5 h-3.5" />
-            <span>Active Employees</span>
+            <span>Active Only</span>
           </button>
 
           {/* Department Filter */}
