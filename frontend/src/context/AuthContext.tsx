@@ -63,8 +63,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
+    // Set loading false immediately so router guards render 0ms instantly
+    setLoading(false);
+
     try {
-      const res = await api.get('/auth/me');
+      const res = await api.get('/auth/me', { timeout: 2000 });
       if (res.data && res.data.user) {
         setUser(res.data.user);
         setToken(activeToken);
@@ -74,15 +77,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (err: any) {
       console.warn('Background session refresh notice:', err?.message || err);
-      // Only clear session if server explicitly returns 401 Unauthorized
-      if (err.response && err.response.status === 401) {
-        localStorage.removeItem('ethara_token');
-        localStorage.removeItem('ethara_user');
-        setToken(null);
-        setUser(null);
-      }
-    } finally {
-      setLoading(false);
     }
   };
 

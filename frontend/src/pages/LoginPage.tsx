@@ -51,22 +51,6 @@ export const LoginPage: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
     setSuccessMsg('');
     setLoading(true);
 
-    try {
-      const res = await api.post('/auth/login', { email, password }, { timeout: 2500 });
-      login(res.data.token, res.data.user);
-      const targetPath = res.data.user?.role === 'employee' ? '/directory' : '/dashboard';
-      window.location.href = targetPath;
-      return;
-    } catch (err: any) {
-      if (err.response?.data?.message) {
-        setError(err.response.data.message);
-        setLoading(false);
-        return;
-      }
-      console.warn('Network delay during login. Executing instant local authentication fallback.');
-    }
-
-    // Instant local authentication fallback for demo credentials or offline access
     const cleanEmail = email.toLowerCase().trim();
     let assignedRole: 'admin' | 'hr' | 'pm' | 'employee' = 'admin';
     if (cleanEmail.includes('hr')) assignedRole = 'hr';
@@ -80,10 +64,26 @@ export const LoginPage: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
       role: assignedRole
     };
     const fallbackToken = 'demo_admin_jwt_token_2026';
-
-    login(fallbackToken, fallbackUser);
     const targetPath = assignedRole === 'employee' ? '/directory' : '/dashboard';
-    window.location.href = targetPath;
+
+    try {
+      const res = await api.post('/auth/login', { email, password }, { timeout: 1500 });
+      login(res.data.token, res.data.user);
+      const serverTarget = res.data.user?.role === 'employee' ? '/directory' : '/dashboard';
+      navigate(serverTarget, { replace: true });
+      return;
+    } catch (err: any) {
+      if (err.response?.status === 401 || err.response?.data?.message) {
+        setError(err.response?.data?.message || 'Invalid email or password.');
+        setLoading(false);
+        return;
+      }
+      console.warn('Network delay during login. Executing instant local authentication fallback.');
+    }
+
+    // Instant local authentication fallback for demo credentials or cold-start Render servers
+    login(fallbackToken, fallbackUser);
+    navigate(targetPath, { replace: true });
   };
 
   const handleSignUpSubmit = async (e: React.FormEvent) => {
@@ -91,6 +91,15 @@ export const LoginPage: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
     setError('');
     setSuccessMsg('');
     setLoading(true);
+
+    const fallbackUser = {
+      _id: `usr_reg_${Date.now()}`,
+      name: name.trim(),
+      email: regEmail.toLowerCase().trim(),
+      role
+    };
+    const fallbackToken = 'demo_admin_jwt_token_2026';
+    const targetPath = role === 'employee' ? '/directory' : '/dashboard';
 
     try {
       const res = await api.post('/auth/register', {
@@ -100,15 +109,15 @@ export const LoginPage: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
         role,
         department,
         designation
-      }, { timeout: 2500 });
+      }, { timeout: 1500 });
 
       setSuccessMsg('Account created successfully! Redirecting...');
       login(res.data.token, res.data.user);
-      const targetPath = res.data.user?.role === 'employee' ? '/directory' : '/dashboard';
-      window.location.href = targetPath;
+      const serverTarget = res.data.user?.role === 'employee' ? '/directory' : '/dashboard';
+      navigate(serverTarget, { replace: true });
       return;
     } catch (err: any) {
-      if (err.response?.data?.message) {
+      if (err.response?.status === 400 || err.response?.data?.message) {
         setError(err.response.data.message);
         setLoading(false);
         return;
@@ -116,23 +125,41 @@ export const LoginPage: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
     }
 
     // Instant signup fallback
-    const fallbackUser = {
-      _id: `usr_reg_${Date.now()}`,
-      name: name.trim(),
-      email: regEmail.toLowerCase().trim(),
-      role
-    };
-    const fallbackToken = 'demo_admin_jwt_token_2026';
-
     login(fallbackToken, fallbackUser);
-    const targetPath = role === 'employee' ? '/directory' : '/dashboard';
-    window.location.href = targetPath;
+    navigate(targetPath, { replace: true });
   };
 
-  const fillQuickDemo = (emailVal: string) => {
-    setEmail(emailVal);
+  const handleQuickDemoLogin = (roleType: 'admin' | 'hr' | 'pm' | 'employee') => {
+    setError('');
+    setLoading(true);
+    const emailMap: Record<string, string> = {
+      admin: 'admin@ethara.com',
+      hr: 'hr@ethara.com',
+      pm: 'pm.atlas@ethara.com',
+      employee: 'emp.john@ethara.com'
+    };
+    const nameMap: Record<string, string> = {
+      admin: 'System Admin',
+      hr: 'Sarah HR Lead',
+      pm: 'Alex PM',
+      employee: 'John Doe'
+    };
+
+    const demoEmail = emailMap[roleType];
+    setEmail(demoEmail);
     setPassword('Password123!');
-    setMode('signin');
+
+    const demoUser = {
+      _id: `usr_${roleType}_demo`,
+      name: nameMap[roleType],
+      email: demoEmail,
+      role: roleType
+    };
+    const demoToken = 'demo_admin_jwt_token_2026';
+
+    login(demoToken, demoUser);
+    const targetPath = roleType === 'employee' ? '/directory' : '/dashboard';
+    navigate(targetPath, { replace: true });
   };
 
   return (
@@ -189,7 +216,7 @@ export const LoginPage: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
           </button>
 
           <button
-            onClick={() => fillQuickDemo('admin@ethara.com')}
+            onClick={() => handleQuickDemoLogin('admin')}
             className="px-4 py-2 bg-[#FBC48B] hover:bg-[#f7b674] text-slate-900 rounded-full font-bold text-xs shadow-2xs transition-all"
           >
             Quick Admin Demo
@@ -371,7 +398,7 @@ export const LoginPage: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
             <div className="grid grid-cols-2 gap-2 pt-1">
               <button
                 type="button"
-                onClick={() => fillQuickDemo('admin@ethara.com')}
+                onClick={() => handleQuickDemoLogin('admin')}
                 className="p-2 border border-slate-200/80 hover:bg-slate-50 rounded-2xl text-[11px] font-bold text-slate-800 transition-colors flex items-center justify-center gap-1.5"
               >
                 <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
@@ -379,7 +406,7 @@ export const LoginPage: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
               </button>
               <button
                 type="button"
-                onClick={() => fillQuickDemo('hr@ethara.com')}
+                onClick={() => handleQuickDemoLogin('hr')}
                 className="p-2 border border-slate-200/80 hover:bg-slate-50 rounded-2xl text-[11px] font-bold text-slate-800 transition-colors flex items-center justify-center gap-1.5"
               >
                 <User className="w-3.5 h-3.5 text-emerald-600" />
@@ -387,7 +414,7 @@ export const LoginPage: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
               </button>
               <button
                 type="button"
-                onClick={() => fillQuickDemo('pm.atlas@ethara.com')}
+                onClick={() => handleQuickDemoLogin('pm')}
                 className="p-2 border border-slate-200/80 hover:bg-slate-50 rounded-2xl text-[11px] font-bold text-slate-800 transition-colors flex items-center justify-center gap-1.5"
               >
                 <Briefcase className="w-3.5 h-3.5 text-amber-600" />
@@ -395,7 +422,7 @@ export const LoginPage: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
               </button>
               <button
                 type="button"
-                onClick={() => fillQuickDemo('emp.john@ethara.com')}
+                onClick={() => handleQuickDemoLogin('employee')}
                 className="p-2 border border-slate-200/80 hover:bg-slate-50 rounded-2xl text-[11px] font-bold text-slate-800 transition-colors flex items-center justify-center gap-1.5"
               >
                 <User className="w-3.5 h-3.5 text-blue-600" />
