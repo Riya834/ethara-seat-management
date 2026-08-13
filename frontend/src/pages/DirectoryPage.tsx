@@ -198,6 +198,23 @@ export const DirectoryPage: React.FC = () => {
       {/* Filter Bar */}
       <div className="bg-white p-3 rounded-[28px] border border-[#EFE8DC] shadow-2xs flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
+          {/* Active Status Pill Button */}
+          <button
+            type="button"
+            onClick={() => {
+              setStatus(status === 'active' ? '' : 'active');
+              setPage(1);
+            }}
+            className={`px-3.5 py-1.5 text-xs font-bold rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
+              status === 'active'
+                ? 'bg-slate-900 text-white shadow-xs'
+                : 'bg-emerald-100/90 hover:bg-emerald-200 text-emerald-900 border border-emerald-200'
+            }`}
+          >
+            <UserCheck className="w-3.5 h-3.5" />
+            <span>Active Employees</span>
+          </button>
+
           {/* Department Filter */}
           <select
             value={department}
@@ -205,7 +222,7 @@ export const DirectoryPage: React.FC = () => {
               setDepartment(e.target.value);
               setPage(1);
             }}
-            className="px-3.5 py-1.5 text-xs bg-slate-100/80 hover:bg-slate-100 rounded-full text-slate-700 font-semibold focus:outline-none"
+            className="px-3.5 py-1.5 text-xs bg-slate-100/80 hover:bg-slate-100 rounded-full text-slate-700 font-semibold focus:outline-none cursor-pointer"
           >
             <option value="">Department ⌄</option>
             {departments.map((d) => (
@@ -220,7 +237,7 @@ export const DirectoryPage: React.FC = () => {
               setProjectId(e.target.value);
               setPage(1);
             }}
-            className="px-3.5 py-1.5 text-xs bg-slate-100/80 hover:bg-slate-100 rounded-full text-slate-700 font-semibold focus:outline-none"
+            className="px-3.5 py-1.5 text-xs bg-slate-100/80 hover:bg-slate-100 rounded-full text-slate-700 font-semibold focus:outline-none cursor-pointer"
           >
             <option value="">Project ⌄</option>
             {projects.map((p) => (
@@ -235,7 +252,7 @@ export const DirectoryPage: React.FC = () => {
               setSeatAllocationStatus(e.target.value);
               setPage(1);
             }}
-            className="px-3.5 py-1.5 text-xs bg-slate-100/80 hover:bg-slate-100 rounded-full text-slate-700 font-semibold focus:outline-none"
+            className="px-3.5 py-1.5 text-xs bg-slate-100/80 hover:bg-slate-100 rounded-full text-slate-700 font-semibold focus:outline-none cursor-pointer"
           >
             <option value="">Seat Status ⌄</option>
             <option value="allocated">Allocated</option>
