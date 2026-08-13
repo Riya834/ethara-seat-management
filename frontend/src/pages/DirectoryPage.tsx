@@ -30,7 +30,6 @@ export const DirectoryPage: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(15);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
 
@@ -68,69 +67,14 @@ export const DirectoryPage: React.FC = () => {
   useEffect(() => {
     fetchEmployees();
     fetchProjects();
-  }, [page, limit, search, department, projectId, status, seatAllocationStatus]);
-
-  // Fast client-side workforce generator for instant rendering when API latency occurs
-  const generateFallbackWorkforce = (p: number, l: number, q: string, d: string, st: string) => {
-    const firstNames = ['Priya', 'Aarav', 'Rohan', 'Ananya', 'Vikram', 'Neha', 'Kabir', 'Tanvi', 'Aditya', 'Meera', 'Karan', 'Zoya', 'Rahul', 'Ishaan', 'Dev', 'Sneha', 'Arjun', 'Pooja', 'Marcus', 'Elena', 'Sophia', 'Liam', 'Noah', 'Emma', 'Oliver', 'Lucas', 'Mia', 'Ethan', 'Charlotte', 'Amelia'];
-    const lastNames = ['Sharma', 'Patel', 'Verma', 'Gupta', 'Singh', 'Reddy', 'Joshi', 'Kapoor', 'Mehta', 'Nair', 'Deshmukh', 'Chopra', 'Rao', 'Bhatia', 'Smith', 'Johnson', 'Brown', 'Taylor', 'Davis', 'Wilson'];
-    const depts = ['Engineering', 'Product', 'Design', 'Sales', 'Marketing', 'Human Resources', 'Finance', 'Operations'];
-
-    let all: Employee[] = [];
-    for (let i = 1; i <= 5000; i++) {
-      const fn = firstNames[i % firstNames.length];
-      const ln = lastNames[(i * 7) % lastNames.length];
-      const dept = depts[i % depts.length];
-      const empId = `ETH-${String(i).padStart(5, '0')}`;
-      const name = `${fn} ${ln}`;
-      const email = `${fn.toLowerCase()}.${ln.toLowerCase()}${i}@ethara.com`;
-
-      all.push({
-        _id: `fallback_emp_${i}`,
-        employeeId: empId,
-        name,
-        email,
-        phone: `+91 98${Math.floor(10000000 + Math.random() * 90000000)}`,
-        designation: `${dept} Lead Specialist`,
-        department: dept,
-        team: `${dept} Team ${(i % 5) + 1}`,
-        joiningDate: new Date(Date.now() - (i % 365) * 86400000).toISOString(),
-        status: i % 15 === 0 ? 'new_joiner' : 'active',
-        seatAllocationStatus: 'allocated',
-        seatId: {
-          _id: `seat_${i}`,
-          seatNumber: `F${(i % 5) + 1}-ZA-${String((i % 50) + 1).padStart(3, '0')}`
-        }
-      });
-    }
-
-    if (q) {
-      const query = q.toLowerCase();
-      all = all.filter((e) => e.name.toLowerCase().includes(query) || e.employeeId.toLowerCase().includes(query) || e.email.toLowerCase().includes(query) || e.department.toLowerCase().includes(query));
-    }
-    if (d) {
-      all = all.filter((e) => e.department.toLowerCase() === d.toLowerCase());
-    }
-    if (st) {
-      all = all.filter((e) => e.status.toLowerCase() === st.toLowerCase());
-    }
-
-    const total = all.length;
-    const skip = (p - 1) * l;
-    const paginated = all.slice(skip, skip + l);
-    const pages = Math.max(1, Math.ceil(total / l));
-
-    return { list: paginated, total, pages };
-  };
+  }, [page, search, department, projectId, status, seatAllocationStatus]);
 
   const fetchEmployees = async () => {
     setLoading(true);
-    let loadedFromApi = false;
-
     try {
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: limit.toString()
+        limit: '15'
       });
 
       if (search) params.append('search', search);
@@ -139,36 +83,17 @@ export const DirectoryPage: React.FC = () => {
       if (status) params.append('status', status);
       if (seatAllocationStatus) params.append('seatAllocationStatus', seatAllocationStatus);
 
-      // Fast API call with 2500ms timeout budget
-      const res = await api.get(`/employees?${params.toString()}`, { timeout: 2500 });
-      const list = Array.isArray(res.data)
-        ? res.data
-        : res.data?.data || res.data?.employees || [];
-      const total = res.data?.pagination?.total ?? (Array.isArray(res.data) ? res.data.length : list.length);
-      const pages = res.data?.pagination?.pages ?? Math.max(1, Math.ceil(total / limit));
-
-      if (list.length > 0) {
-        setEmployees(list);
-        setTotalRecords(total);
-        setTotalPages(pages);
-        if (!selectedRowId) setSelectedRowId(list[0]._id);
-        loadedFromApi = true;
+      const res = await api.get(`/employees?${params.toString()}`);
+      setEmployees(res.data.data);
+      if (res.data.data.length > 0 && !selectedRowId) {
+        setSelectedRowId(res.data.data[0]._id);
       }
+      setTotalPages(res.data.pagination.pages);
+      setTotalRecords(res.data.pagination.total);
     } catch (err) {
-      console.warn('API connection delay or offline mode. Activating instant 5,000 workforce fallback generator.');
+      console.error('Failed to load employees:', err);
     } finally {
       setLoading(false);
-    }
-
-    // If API returned 0 records or network timed out, load instant fallback dataset
-    if (!loadedFromApi) {
-      const fallback = generateFallbackWorkforce(page, limit, search, department, status);
-      setEmployees(fallback.list);
-      setTotalRecords(fallback.total);
-      setTotalPages(fallback.pages);
-      if (fallback.list.length > 0 && !selectedRowId) {
-        setSelectedRowId(fallback.list[0]._id);
-      }
     }
   };
 
@@ -186,40 +111,14 @@ export const DirectoryPage: React.FC = () => {
     setFormError('');
     setFormSubmitting(true);
 
-    const createdObj: Employee = {
-      _id: `emp_opt_${Date.now()}`,
-      employeeId: newEmp.employeeId || `ETH-${Math.floor(50000 + Math.random() * 40000)}`,
-      name: newEmp.name,
-      email: newEmp.email,
-      phone: newEmp.phone,
-      designation: newEmp.designation,
-      department: newEmp.department,
-      team: newEmp.team,
-      joiningDate: newEmp.joiningDate,
-      status: 'active',
-      seatAllocationStatus: 'pending'
-    };
-
-    // Optimistic UI update: prepend to table immediately in 0ms!
-    setEmployees((prev) => [createdObj, ...prev]);
-    setTotalRecords((prev) => prev + 1);
-    setSelectedRowId(createdObj._id);
-    setIsAddModalOpen(false);
-
     try {
       const payload = {
         ...newEmp,
         projectId: newEmp.projectId ? newEmp.projectId : null
       };
 
-      const res = await api.post('/employees', payload, { timeout: 3000 });
-      if (res.data && res.data._id) {
-        setSelectedRowId(res.data._id);
-      }
-    } catch (err: any) {
-      console.warn('Backend sync notice for new employee creation:', err?.message || err);
-    } finally {
-      setFormSubmitting(false);
+      const res = await api.post('/employees', payload);
+      setIsAddModalOpen(false);
       setNewEmp({
         employeeId: `ETH-${Math.floor(50000 + Math.random() * 40000)}`,
         name: '',
@@ -232,6 +131,16 @@ export const DirectoryPage: React.FC = () => {
         joiningDate: new Date().toISOString().split('T')[0],
         status: 'active'
       });
+
+      fetchEmployees();
+      if (res.data && res.data._id) {
+        setSelectedRowId(res.data._id);
+      }
+    } catch (err: any) {
+      console.error('Add Employee Error:', err);
+      setFormError(err.response?.data?.message || err.message || 'Failed to create employee');
+    } finally {
+      setFormSubmitting(false);
     }
   };
 
@@ -298,12 +207,12 @@ export const DirectoryPage: React.FC = () => {
             }}
             className={`px-3.5 py-1.5 text-xs font-bold rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
               status === 'active'
-                ? 'bg-slate-900 text-emerald-400 border border-slate-800 shadow-xs'
-                : 'bg-slate-100/80 hover:bg-slate-100 text-slate-700 font-semibold'
+                ? 'bg-slate-900 text-white shadow-xs'
+                : 'bg-emerald-100/90 hover:bg-emerald-200 text-emerald-900 border border-emerald-200'
             }`}
           >
             <UserCheck className="w-3.5 h-3.5" />
-            <span>Active Only</span>
+            <span>Active Employees</span>
           </button>
 
           {/* Department Filter */}
@@ -450,35 +359,16 @@ export const DirectoryPage: React.FC = () => {
                           </span>
                         )}
                       </td>
-                      <td className="py-4 px-6 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          {emp.status === 'active' ? (
-                            <div
-                              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold tracking-wider uppercase whitespace-nowrap transition-all ${
-                                isSelected
-                                  ? 'bg-slate-900 text-emerald-400 border border-slate-800'
-                                  : 'bg-emerald-50 text-emerald-800 border border-emerald-200/80 shadow-2xs'
-                              }`}
-                            >
-                              <span className="relative flex h-2 w-2 shrink-0">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                              </span>
-                              <span>Active</span>
-                            </div>
-                          ) : (
-                            <div
-                              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase whitespace-nowrap transition-all ${
-                                isSelected
-                                  ? 'bg-slate-900 text-slate-300 border border-slate-800'
-                                  : 'bg-slate-100 text-slate-700 border border-slate-200'
-                              }`}
-                            >
-                              <span className="h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0"></span>
-                              <span>{emp.status.replace('_', ' ')}</span>
-                            </div>
-                          )}
-                        </div>
+                      <td className="py-4 px-6">
+                        <span
+                          className={`inline-block px-2.5 py-0.5 text-[10px] font-bold rounded-full uppercase ${
+                            emp.status === 'active'
+                              ? 'bg-emerald-100 text-emerald-900'
+                              : 'bg-blue-100 text-blue-900'
+                          }`}
+                        >
+                          ● {emp.status.replace('_', ' ')}
+                        </span>
                       </td>
 
                       {/* Action Buttons */}
@@ -522,64 +412,23 @@ export const DirectoryPage: React.FC = () => {
         )}
 
         {/* Pagination Footer */}
-        <div className="p-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500 bg-slate-50/50">
-          <div className="flex items-center gap-3">
-            <span>
-              Showing <strong>{(page - 1) * limit + 1}</strong> - <strong>{Math.min(page * limit, totalRecords)}</strong> of <strong>{totalRecords.toLocaleString()}</strong> employees
-            </span>
-            <div className="flex items-center gap-1">
-              <span className="text-slate-400">Rows per page:</span>
-              <select
-                value={limit}
-                onChange={(e) => {
-                  setLimit(Number(e.target.value));
-                  setPage(1);
-                }}
-                className="px-2 py-1 text-xs bg-white border border-slate-200 rounded-lg font-bold text-slate-800 focus:outline-none cursor-pointer"
-              >
-                <option value={15}>15</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1">
-              <span className="text-slate-400">Page:</span>
-              <input
-                type="number"
-                min={1}
-                max={totalPages}
-                value={page}
-                onChange={(e) => {
-                  const val = Number(e.target.value);
-                  if (val >= 1 && val <= totalPages) setPage(val);
-                }}
-                className="w-12 px-2 py-1 text-xs font-bold text-center bg-white border border-slate-200 rounded-lg focus:outline-none"
-              />
-              <span>of <strong>{totalPages}</strong></span>
-            </div>
-
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="p-1.5 border border-slate-200 rounded-lg hover:bg-white disabled:opacity-40 font-bold transition-colors flex items-center gap-1"
-              >
-                <ChevronLeft className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Prev</span>
-              </button>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="p-1.5 border border-slate-200 rounded-lg hover:bg-white disabled:opacity-40 font-bold transition-colors flex items-center gap-1"
-              >
-                <span className="hidden sm:inline">Next</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
+        <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 bg-slate-50/50">
+          <span>Page <strong>{page}</strong> of <strong>{totalPages}</strong> ({totalRecords} records)</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="p-2 border border-slate-200 rounded-full hover:bg-white disabled:opacity-40"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="p-2 border border-slate-200 rounded-full hover:bg-white disabled:opacity-40"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </div>

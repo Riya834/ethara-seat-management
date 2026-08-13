@@ -13,140 +13,23 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
   const [results, setResults] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const defaultRoster: Employee[] = [
-    {
-      _id: 'emp_s1',
-      employeeId: 'ETH-00107',
-      name: 'Priya Sharma',
-      email: 'priya.sharma@ethara.com',
-      designation: 'UI/UX Lead Specialist',
-      department: 'Design & Experience',
-      team: 'Design System',
-      projectId: { code: 'PROJ-BEACON', name: 'Project Beacon Analytics' } as any,
-      seatId: { seatNumber: 'F2-ZA-014', floorId: { floorNumber: 2 }, zoneId: { zoneName: 'Zone A - East Wing' } } as any
-    } as any,
-    {
-      _id: 'emp_s2',
-      employeeId: 'ETH-00101',
-      name: 'Pooja Sharma',
-      email: 'pooja.sharma@ethara.com',
-      designation: 'Senior Backend Specialist',
-      department: 'Engineering',
-      team: 'Core Platform',
-      projectId: { code: 'PROJ-ATLAS', name: 'Project Atlas AI Core' } as any,
-      seatId: { seatNumber: 'F1-ZA-002', floorId: { floorNumber: 1 }, zoneId: { zoneName: 'Zone A - East Wing' } } as any
-    } as any,
-    {
-      _id: 'emp_s3',
-      employeeId: 'ETH-00102',
-      name: 'Rohan Kumar',
-      email: 'rohan.kumar@ethara.com',
-      designation: 'Associate Specialist',
-      department: 'Engineering',
-      team: 'Frontend Architecture',
-      projectId: { code: 'PROJ-ATLAS', name: 'Project Atlas AI Core' } as any,
-      seatId: { seatNumber: 'F1-ZA-003', floorId: { floorNumber: 1 }, zoneId: { zoneName: 'Zone A - East Wing' } } as any
-    } as any,
-    {
-      _id: 'emp_s4',
-      employeeId: 'ETH-00103',
-      name: 'Kavya Rao',
-      email: 'kavya.rao@ethara.com',
-      designation: 'Product Designer',
-      department: 'Design',
-      team: 'UX Research',
-      projectId: { code: 'PROJ-BEACON', name: 'Project Beacon Analytics' } as any
-    } as any,
-    {
-      _id: 'emp_s5',
-      employeeId: 'ETH-00104',
-      name: 'Michael Davis',
-      email: 'michael.davis@ethara.com',
-      designation: 'Backend Architect',
-      department: 'Engineering',
-      team: 'API Gateway',
-      projectId: { code: 'PROJ-NEXUS', name: 'Project Nexus Cloud' } as any,
-      seatId: { seatNumber: 'F3-ZB-040', floorId: { floorNumber: 3 }, zoneId: { zoneName: 'Zone B - West Wing' } } as any
-    } as any,
-    {
-      _id: 'emp_s6',
-      employeeId: 'ETH-00105',
-      name: 'Anita Desai',
-      email: 'anita.desai@ethara.com',
-      designation: 'QA Automation Engineer',
-      department: 'Operations',
-      team: 'Quality Engineering',
-      projectId: { code: 'PROJ-PULSE', name: 'Project Pulse CRM' } as any
-    } as any,
-    {
-      _id: 'emp_s7',
-      employeeId: 'ETH-00004',
-      name: 'John Doe',
-      email: 'john.doe@ethara.com',
-      designation: 'Staff Frontend Engineer',
-      department: 'Engineering',
-      team: 'Web Portal',
-      projectId: { code: 'PROJ-ATLAS', name: 'Project Atlas AI Core' } as any,
-      seatId: { seatNumber: 'F2-ZB-016', floorId: { floorNumber: 2 }, zoneId: { zoneName: 'Zone B - West Wing' } } as any
-    } as any,
-    {
-      _id: 'emp_s8',
-      employeeId: 'ETH-00001',
-      name: 'Sarah HR Lead',
-      email: 'hr@ethara.com',
-      designation: 'HR Lead Manager',
-      department: 'Human Resources',
-      team: 'Workforce Operations'
-    } as any,
-    {
-      _id: 'emp_s9',
-      employeeId: 'ETH-00002',
-      name: 'Alex Project Manager',
-      email: 'pm.atlas@ethara.com',
-      designation: 'Senior Project Manager',
-      department: 'Management',
-      team: 'Project Management'
-    } as any
-  ];
-
   useEffect(() => {
     if (!query.trim()) {
       setResults([]);
       return;
     }
 
-    const cleanQ = query.trim().toLowerCase();
-
-    // Client-side search matching name, ID, email, department, project, or seat number
-    const localMatches = defaultRoster.filter((emp) => {
-      const seatNum = emp.seatId ? (typeof emp.seatId === 'object' ? emp.seatId.seatNumber : emp.seatId) : '';
-      const projCode = emp.projectId ? (typeof emp.projectId === 'object' ? emp.projectId.code || emp.projectId.name : emp.projectId) : '';
-      return (
-        emp.name.toLowerCase().includes(cleanQ) ||
-        emp.employeeId.toLowerCase().includes(cleanQ) ||
-        emp.email.toLowerCase().includes(cleanQ) ||
-        emp.department.toLowerCase().includes(cleanQ) ||
-        projCode.toLowerCase().includes(cleanQ) ||
-        seatNum.toLowerCase().includes(cleanQ)
-      );
-    });
-
-    setResults(localMatches);
-
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
-        const res = await api.get(`/employees/search?q=${encodeURIComponent(query)}`, { timeout: 1500 });
-        const apiData = Array.isArray(res.data) ? res.data : res.data?.employees || res.data?.data || [];
-        if (apiData.length > 0) {
-          setResults(apiData);
-        }
+        const res = await api.get(`/employees/search?q=${encodeURIComponent(query)}`);
+        setResults(res.data);
       } catch (err) {
-        console.warn('Network search fallback active.');
+        console.error('Search failed:', err);
       } finally {
         setLoading(false);
       }
-    }, 200);
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [query]);

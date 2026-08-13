@@ -20,13 +20,11 @@ export const LoginPage: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
     setMode(initialMode);
   }, [initialMode]);
 
-  // If already logged in, redirect immediately without hard page reloads
+  // If already logged in, redirect immediately
   useEffect(() => {
-    if (user && localStorage.getItem('ethara_token')) {
+    if (user) {
       const targetPath = user.role === 'employee' ? '/directory' : '/dashboard';
-      if (window.location.pathname === '/login' || window.location.pathname === '/signup') {
-        navigate(targetPath, { replace: true });
-      }
+      navigate(targetPath, { replace: true });
     }
   }, [user, navigate]);
 
@@ -39,7 +37,7 @@ export const LoginPage: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
   const [name, setName] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
-  const [role, setRole] = useState<'admin' | 'hr' | 'pm' | 'employee'>('admin');
+  const [role, setRole] = useState<'admin' | 'hr' | 'pm' | 'employee'>('employee');
   const [department, setDepartment] = useState('Engineering');
   const [designation, setDesignation] = useState('Senior Specialist');
 
@@ -53,39 +51,19 @@ export const LoginPage: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
     setSuccessMsg('');
     setLoading(true);
 
-    const cleanEmail = email.toLowerCase().trim();
-    let assignedRole: 'admin' | 'hr' | 'pm' | 'employee' = 'admin';
-    if (cleanEmail.includes('hr')) assignedRole = 'hr';
-    else if (cleanEmail.includes('pm')) assignedRole = 'pm';
-    else if (cleanEmail.includes('emp') || cleanEmail.includes('john') || cleanEmail.includes('pooja')) assignedRole = 'employee';
-
-    const fallbackUser = {
-      _id: `usr_fallback_${Date.now()}`,
-      name: cleanEmail.split('@')[0].toUpperCase(),
-      email: cleanEmail,
-      role: assignedRole
-    };
-    const fallbackToken = 'demo_admin_jwt_token_2026';
-    const targetPath = assignedRole === 'employee' ? '/directory' : '/dashboard';
-
     try {
-      const res = await api.post('/auth/login', { email, password }, { timeout: 1500 });
+      const res = await api.post('/auth/login', { email, password });
       login(res.data.token, res.data.user);
-      const serverTarget = res.data.user?.role === 'employee' ? '/directory' : '/dashboard';
-      navigate(serverTarget, { replace: true });
-      return;
+      const targetPath = res.data.user?.role === 'employee' ? '/directory' : '/dashboard';
+      navigate(targetPath, { replace: true });
     } catch (err: any) {
-      if (err.response?.status === 401 || err.response?.data?.message) {
-        setError(err.response?.data?.message || 'Invalid email or password.');
-        setLoading(false);
-        return;
-      }
-      console.warn('Network delay during login. Executing instant local authentication fallback.');
+      setError(
+        err.response?.data?.message ||
+          'Invalid email or password. Please check your credentials.'
+      );
+    } finally {
+      setLoading(false);
     }
-
-    // Instant local authentication fallback for demo credentials or cold-start Render servers
-    login(fallbackToken, fallbackUser);
-    navigate(targetPath, { replace: true });
   };
 
   const handleSignUpSubmit = async (e: React.FormEvent) => {
@@ -93,15 +71,6 @@ export const LoginPage: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
     setError('');
     setSuccessMsg('');
     setLoading(true);
-
-    const fallbackUser = {
-      _id: `usr_reg_${Date.now()}`,
-      name: name.trim(),
-      email: regEmail.toLowerCase().trim(),
-      role
-    };
-    const fallbackToken = 'demo_admin_jwt_token_2026';
-    const targetPath = role === 'employee' ? '/directory' : '/dashboard';
 
     try {
       const res = await api.post('/auth/register', {
@@ -111,57 +80,23 @@ export const LoginPage: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
         role,
         department,
         designation
-      }, { timeout: 1500 });
+      });
 
-      setSuccessMsg('Account created successfully! Redirecting...');
+      setSuccessMsg('Account created successfully!');
       login(res.data.token, res.data.user);
-      const serverTarget = res.data.user?.role === 'employee' ? '/directory' : '/dashboard';
-      navigate(serverTarget, { replace: true });
-      return;
+      const targetPath = res.data.user?.role === 'employee' ? '/directory' : '/dashboard';
+      navigate(targetPath, { replace: true });
     } catch (err: any) {
-      if (err.response?.status === 400 || err.response?.data?.message) {
-        setError(err.response.data.message);
-        setLoading(false);
-        return;
-      }
+      setError(err.response?.data?.message || 'Registration failed. Email may already exist.');
+    } finally {
+      setLoading(false);
     }
-
-    // Instant signup fallback
-    login(fallbackToken, fallbackUser);
-    navigate(targetPath, { replace: true });
   };
 
-  const handleQuickDemoLogin = (roleType: 'admin' | 'hr' | 'pm' | 'employee') => {
-    setError('');
-    setLoading(true);
-    const emailMap: Record<string, string> = {
-      admin: 'admin@ethara.com',
-      hr: 'hr@ethara.com',
-      pm: 'pm.atlas@ethara.com',
-      employee: 'emp.john@ethara.com'
-    };
-    const nameMap: Record<string, string> = {
-      admin: 'System Admin',
-      hr: 'Sarah HR Lead',
-      pm: 'Alex PM',
-      employee: 'John Doe'
-    };
-
-    const demoEmail = emailMap[roleType];
-    setEmail(demoEmail);
+  const fillQuickDemo = (emailVal: string) => {
+    setEmail(emailVal);
     setPassword('Password123!');
-
-    const demoUser = {
-      _id: `usr_${roleType}_demo`,
-      name: nameMap[roleType],
-      email: demoEmail,
-      role: roleType
-    };
-    const demoToken = 'demo_admin_jwt_token_2026';
-
-    login(demoToken, demoUser);
-    const targetPath = roleType === 'employee' ? '/directory' : '/dashboard';
-    navigate(targetPath, { replace: true });
+    setMode('signin');
   };
 
   return (
@@ -218,7 +153,7 @@ export const LoginPage: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
           </button>
 
           <button
-            onClick={() => handleQuickDemoLogin('admin')}
+            onClick={() => fillQuickDemo('admin@ethara.com')}
             className="px-4 py-2 bg-[#FBC48B] hover:bg-[#f7b674] text-slate-900 rounded-full font-bold text-xs shadow-2xs transition-all"
           >
             Quick Admin Demo
@@ -400,7 +335,7 @@ export const LoginPage: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
             <div className="grid grid-cols-2 gap-2 pt-1">
               <button
                 type="button"
-                onClick={() => handleQuickDemoLogin('admin')}
+                onClick={() => fillQuickDemo('admin@ethara.com')}
                 className="p-2 border border-slate-200/80 hover:bg-slate-50 rounded-2xl text-[11px] font-bold text-slate-800 transition-colors flex items-center justify-center gap-1.5"
               >
                 <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
@@ -408,7 +343,7 @@ export const LoginPage: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
               </button>
               <button
                 type="button"
-                onClick={() => handleQuickDemoLogin('hr')}
+                onClick={() => fillQuickDemo('hr@ethara.com')}
                 className="p-2 border border-slate-200/80 hover:bg-slate-50 rounded-2xl text-[11px] font-bold text-slate-800 transition-colors flex items-center justify-center gap-1.5"
               >
                 <User className="w-3.5 h-3.5 text-emerald-600" />
@@ -416,7 +351,7 @@ export const LoginPage: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
               </button>
               <button
                 type="button"
-                onClick={() => handleQuickDemoLogin('pm')}
+                onClick={() => fillQuickDemo('pm.atlas@ethara.com')}
                 className="p-2 border border-slate-200/80 hover:bg-slate-50 rounded-2xl text-[11px] font-bold text-slate-800 transition-colors flex items-center justify-center gap-1.5"
               >
                 <Briefcase className="w-3.5 h-3.5 text-amber-600" />
@@ -424,7 +359,7 @@ export const LoginPage: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
               </button>
               <button
                 type="button"
-                onClick={() => handleQuickDemoLogin('employee')}
+                onClick={() => fillQuickDemo('emp.john@ethara.com')}
                 className="p-2 border border-slate-200/80 hover:bg-slate-50 rounded-2xl text-[11px] font-bold text-slate-800 transition-colors flex items-center justify-center gap-1.5"
               >
                 <User className="w-3.5 h-3.5 text-blue-600" />

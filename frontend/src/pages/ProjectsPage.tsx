@@ -3,7 +3,6 @@ import { Briefcase, Plus, Users, Grid, Calendar, CheckCircle, X, ShieldAlert, La
 import api from '../services/api';
 import { Project, Employee, Seat } from '../types';
 import { useAuth } from '../context/AuthContext';
-import { SearchableEmployeeSelect } from '../components/SearchableEmployeeSelect';
 
 export const ProjectsPage: React.FC = () => {
   const { user } = useAuth();
@@ -11,19 +10,8 @@ export const ProjectsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedProject, setSelectedProject] = useState<any>(null);
 
-  const defaultAvailableEmployees: Employee[] = [
-    { _id: 'emp_p1', employeeId: 'ETH-00101', name: 'Pooja Sharma', designation: 'Senior Specialist', department: 'Engineering' } as any,
-    { _id: 'emp_p2', employeeId: 'ETH-00102', name: 'Rohan Kumar', designation: 'Associate Specialist', department: 'Engineering' } as any,
-    { _id: 'emp_p3', employeeId: 'ETH-00103', name: 'Kavya Rao', designation: 'Product Designer', department: 'Design' } as any,
-    { _id: 'emp_p4', employeeId: 'ETH-00104', name: 'Michael Davis', designation: 'Backend Architect', department: 'Engineering' } as any,
-    { _id: 'emp_p5', employeeId: 'ETH-00105', name: 'Anita Desai', designation: 'QA Engineer', department: 'Operations' } as any,
-    { _id: 'emp_p6', employeeId: 'ETH-00106', name: 'David Wilson', designation: 'Cloud DevOps Specialist', department: 'Engineering' } as any,
-    { _id: 'emp_p7', employeeId: 'ETH-00107', name: 'Priya Sharma', designation: 'UI/UX Specialist', department: 'Design' } as any,
-    { _id: 'emp_p8', employeeId: 'ETH-00108', name: 'Rahul Verma', designation: 'Frontend Specialist', department: 'Engineering' } as any
-  ];
-
   // Add Member state inside Project Modal
-  const [availableEmployees, setAvailableEmployees] = useState<Employee[]>(defaultAvailableEmployees);
+  const [availableEmployees, setAvailableEmployees] = useState<Employee[]>([]);
   const [selectedEmpToAdd, setSelectedEmpToAdd] = useState<string>('');
   const [memberActionLoading, setMemberActionLoading] = useState(false);
   const [memberMessage, setMemberMessage] = useState('');
@@ -45,52 +33,13 @@ export const ProjectsPage: React.FC = () => {
     fetchAvailableEmployees();
   }, []);
 
-  const defaultProjects: Project[] = [
-    {
-      _id: 'p1',
-      name: 'Project Atlas AI Core',
-      code: 'PROJ-ATLAS',
-      description: 'Enterprise Generative AI Engine & Workforce Automation System',
-      startDate: new Date('2024-01-15').toISOString(),
-      status: 'active',
-      reservedSeatsCount: 140,
-      assignedEmployeesCount: 120
-    } as any,
-    {
-      _id: 'p2',
-      name: 'Project Beacon Analytics',
-      code: 'PROJ-BEACON',
-      description: 'Real-time Occupancy Telemetry & Spatial Intelligence Platform',
-      startDate: new Date('2024-03-01').toISOString(),
-      status: 'active',
-      reservedSeatsCount: 100,
-      assignedEmployeesCount: 85
-    } as any,
-    {
-      _id: 'p3',
-      name: 'Project Nexus Cloud',
-      code: 'PROJ-NEXUS',
-      description: 'Multi-region Hybrid Cloud Infrastructure & Data Mesh',
-      startDate: new Date('2024-02-10').toISOString(),
-      status: 'active',
-      reservedSeatsCount: 150,
-      assignedEmployeesCount: 140
-    } as any
-  ];
-
   const fetchProjects = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/projects', { timeout: 2500 });
-      const pList = Array.isArray(res.data) ? res.data : res.data?.projects || res.data?.data || [];
-      if (pList.length > 0) {
-        setProjects(pList);
-      } else {
-        setProjects(defaultProjects);
-      }
+      const res = await api.get('/projects');
+      setProjects(res.data);
     } catch (err) {
-      console.warn('Network delay loading projects. Using default project blocks:');
-      setProjects(defaultProjects);
+      console.error('Failed to load projects:', err);
     } finally {
       setLoading(false);
     }
@@ -98,35 +47,20 @@ export const ProjectsPage: React.FC = () => {
 
   const fetchAvailableEmployees = async () => {
     try {
-      const res = await api.get('/employees?limit=100', { timeout: 2500 });
-      const empList = Array.isArray(res.data) && res.data.length > 0 ? res.data : res.data?.data || res.data?.employees || defaultAvailableEmployees;
-      setAvailableEmployees(empList);
+      const res = await api.get('/employees?limit=100');
+      setAvailableEmployees(res.data.data);
     } catch (err) {
-      console.warn('Network timeout fetching employees. Using default available team member list.');
-      setAvailableEmployees(defaultAvailableEmployees);
+      console.error('Failed to load employee list for team assignment:', err);
     }
   };
 
   const handleProjectClick = async (projectId: string) => {
     setMemberMessage('');
     try {
-      const res = await api.get(`/projects/${projectId}`, { timeout: 1500 });
+      const res = await api.get(`/projects/${projectId}`);
       setSelectedProject(res.data);
     } catch (err) {
-      console.warn('Network timeout fetching project detail. Constructing project view:');
-      const targetProj = projects.find((p) => p._id === projectId) || {
-        _id: projectId,
-        name: 'Project Block Allocation',
-        code: 'PROJ-CORE',
-        description: 'Enterprise project block allocation',
-        status: 'active',
-        startDate: new Date().toISOString()
-      };
-      setSelectedProject({
-        project: targetProj,
-        members: availableEmployees.slice(0, 3),
-        seats: []
-      });
+      console.error('Failed to fetch project detail:', err);
     }
   };
 
@@ -135,32 +69,18 @@ export const ProjectsPage: React.FC = () => {
     setMemberActionLoading(true);
     setMemberMessage('');
 
-    const targetProjId = selectedProject.project?._id || selectedProject._id || 'proj_target';
-    const addedEmp = availableEmployees.find((e) => e._id === selectedEmpToAdd) || {
-      _id: selectedEmpToAdd,
-      name: 'Assigned Specialist',
-      employeeId: `ETH-${Math.floor(10000 + Math.random() * 90000)}`,
-      designation: 'Project Specialist',
-      department: 'Engineering'
-    };
-
-    // Optimistic UI insertion for 0ms team addition
-    setSelectedProject((prev: any) => ({
-      ...prev,
-      members: [...(prev?.members || []), addedEmp]
-    }));
-    setProjects((prev) =>
-      prev.map((p) => (p._id === targetProjId ? { ...p, assignedEmployeesCount: ((p as any).assignedEmployeesCount || 0) + 1 } : p))
-    );
-    setMemberMessage('Team member added successfully!');
-    setSelectedEmpToAdd('');
-
     try {
-      await api.post(`/projects/${targetProjId}/members`, {
+      await api.post(`/projects/${selectedProject.project._id}/members`, {
         employeeIds: [selectedEmpToAdd]
-      }, { timeout: 1500 });
+      });
+
+      setMemberMessage('Team member added successfully!');
+      setSelectedEmpToAdd('');
+      // Refresh modal and project grid
+      await handleProjectClick(selectedProject.project._id);
+      fetchProjects();
     } catch (err: any) {
-      console.warn('Async team member sync completed with local state active.');
+      setMemberMessage(err.response?.data?.message || 'Failed to add team member.');
     } finally {
       setMemberActionLoading(false);
     }
@@ -173,22 +93,13 @@ export const ProjectsPage: React.FC = () => {
     setMemberActionLoading(true);
     setMemberMessage('');
 
-    const targetProjId = selectedProject.project._id;
-
-    // Optimistic local state removal
-    setSelectedProject((prev: any) => ({
-      ...prev,
-      members: (prev?.members || []).filter((m: any) => m._id !== employeeId)
-    }));
-    setProjects((prev) =>
-      prev.map((p) => (p._id === targetProjId ? { ...p, assignedEmployeesCount: Math.max(0, ((p as any).assignedEmployeesCount || 1) - 1) } : p))
-    );
-    setMemberMessage('Team member removed.');
-
     try {
-      await api.delete(`/projects/${targetProjId}/members/${employeeId}`, { timeout: 1500 });
+      await api.delete(`/projects/${selectedProject.project._id}/members/${employeeId}`);
+      setMemberMessage('Team member removed.');
+      await handleProjectClick(selectedProject.project._id);
+      fetchProjects();
     } catch (err: any) {
-      console.warn('Async team member remove completed with local state active.');
+      setMemberMessage(err.response?.data?.message || 'Failed to remove team member.');
     } finally {
       setMemberActionLoading(false);
     }
@@ -199,35 +110,18 @@ export const ProjectsPage: React.FC = () => {
     setFormError('');
     setFormSubmitting(true);
 
-    const createdId = `proj_new_${Date.now()}`;
-    const createdProject: Project = {
-      _id: createdId,
-      name: newProject.name.trim() || 'New Innovation Project',
-      code: newProject.code.trim().toUpperCase() || `PROJ-${Math.floor(1000 + Math.random() * 9000)}`,
-      description: newProject.description.trim() || 'Enterprise project block allocation',
-      startDate: newProject.startDate || new Date().toISOString(),
-      status: 'active',
-      reservedSeatsCount: 20,
-      assignedEmployeesCount: 0
-    } as any;
-
-    // 0ms Optimistic local creation
-    setProjects((prev) => [createdProject, ...prev]);
-    setIsAddModalOpen(false);
-
-    // Auto open team member modal for newly created project!
-    setSelectedProject({
-      project: createdProject,
-      members: [],
-      seats: []
-    });
-
     try {
-      await api.post('/projects', newProject, { timeout: 2000 });
+      const res = await api.post('/projects', newProject);
+      setIsAddModalOpen(false);
       setNewProject({ name: '', code: '', description: '', startDate: new Date().toISOString().split('T')[0] });
+      fetchProjects();
+      
+      // Auto open team member modal for newly created project!
+      if (res.data && res.data._id) {
+        handleProjectClick(res.data._id);
+      }
     } catch (err: any) {
-      console.warn('Async project creation completed with local state active.');
-      setNewProject({ name: '', code: '', description: '', startDate: new Date().toISOString().split('T')[0] });
+      setFormError(err.response?.data?.message || 'Failed to create project');
     } finally {
       setFormSubmitting(false);
     }
@@ -244,7 +138,7 @@ export const ProjectsPage: React.FC = () => {
           </p>
         </div>
 
-        {['admin', 'hr', 'pm', 'employee'].includes(user?.role || 'admin') && (
+        {['admin', 'hr'].includes(user?.role || '') && (
           <button
             onClick={() => setIsAddModalOpen(true)}
             className="px-5 py-2.5 bg-[#FBC48B] hover:bg-[#f7b674] text-slate-900 rounded-full font-bold text-xs shadow-xs transition-all flex items-center gap-2"
@@ -396,148 +290,140 @@ export const ProjectsPage: React.FC = () => {
       )}
 
       {/* Project Card Details & Team Members Modal */}
-      {selectedProject && (() => {
-        const projObj = selectedProject.project || selectedProject;
-        const membersList: any[] = Array.isArray(selectedProject.assignedEmployees)
-          ? selectedProject.assignedEmployees
-          : Array.isArray(selectedProject.members)
-          ? selectedProject.members
-          : [];
-        const headcount = selectedProject.metrics?.totalHeadcount ?? membersList.length;
-        const reservedSeats = selectedProject.metrics?.totalReservedBlockSeats ?? projObj.reservedSeatsCount ?? 20;
-        const utilization = selectedProject.metrics?.utilizationPercentage ?? projObj.utilizationPercentage ?? 85;
-
-        return (
-          <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white w-full max-w-2xl rounded-[32px] shadow-2xl border border-[#EFE8DC] p-6 space-y-5 max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div>
-                  <span className="px-3 py-1 text-xs font-bold bg-[#FBC48B] text-slate-900 rounded-full uppercase">
-                    {projObj.code || 'PROJ'}
-                  </span>
-                  <h3 className="font-bold text-slate-900 text-lg mt-1.5">{projObj.name || 'Project Allocation'}</h3>
-                </div>
-                <button onClick={() => setSelectedProject(null)} className="text-slate-400 hover:text-slate-600">
-                  <X className="w-5 h-5" />
-                </button>
+      {selectedProject && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-2xl rounded-[32px] shadow-2xl border border-[#EFE8DC] p-6 space-y-5 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <span className="px-3 py-1 text-xs font-bold bg-[#FBC48B] text-slate-900 rounded-full uppercase">
+                  {selectedProject.project.code}
+                </span>
+                <h3 className="font-bold text-slate-900 text-lg mt-1.5">{selectedProject.project.name}</h3>
               </div>
+              <button onClick={() => setSelectedProject(null)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-              {/* Metrics */}
-              <div className="grid grid-cols-3 gap-3 p-4 bg-[#FAF7F2] rounded-2xl border border-[#EFE8DC] text-center">
-                <div>
-                  <span className="text-[11px] text-slate-400 uppercase font-semibold">Headcount</span>
-                  <p className="text-xl font-bold text-slate-900">{headcount}</p>
-                </div>
-                <div>
-                  <span className="text-[11px] text-slate-400 uppercase font-semibold">Reserved Block Seats</span>
-                  <p className="text-xl font-bold text-slate-900">{reservedSeats}</p>
-                </div>
-                <div>
-                  <span className="text-[11px] text-slate-400 uppercase font-semibold">Utilization</span>
-                  <p className="text-xl font-bold text-slate-900">{utilization}%</p>
-                </div>
+            {/* Metrics */}
+            <div className="grid grid-cols-3 gap-3 p-4 bg-[#FAF7F2] rounded-2xl border border-[#EFE8DC] text-center">
+              <div>
+                <span className="text-[11px] text-slate-400 uppercase font-semibold">Headcount</span>
+                <p className="text-xl font-bold text-slate-900">{selectedProject.metrics.totalHeadcount}</p>
               </div>
+              <div>
+                <span className="text-[11px] text-slate-400 uppercase font-semibold">Reserved Block Seats</span>
+                <p className="text-xl font-bold text-slate-900">{selectedProject.metrics.totalReservedBlockSeats}</p>
+              </div>
+              <div>
+                <span className="text-[11px] text-slate-400 uppercase font-semibold">Utilization</span>
+                <p className="text-xl font-bold text-slate-900">{selectedProject.metrics.utilizationPercentage}%</p>
+              </div>
+            </div>
 
-              {/* ADD TEAM MEMBERS TO THIS PROJECT SECTION */}
-              <div className="p-4 bg-amber-50/60 rounded-2xl border border-amber-200/80 space-y-3">
-                <h4 className="font-bold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                  <UserPlus className="w-4 h-4 text-amber-800" />
-                  <span>Add Team Member to Project</span>
-                </h4>
+            {/* ADD TEAM MEMBERS TO THIS PROJECT SECTION */}
+            <div className="p-4 bg-amber-50/60 rounded-2xl border border-amber-200/80 space-y-3">
+              <h4 className="font-bold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <UserPlus className="w-4 h-4 text-amber-800" />
+                <span>Add Team Member to Project</span>
+              </h4>
 
-                {memberMessage && (
-                  <div className="p-2 bg-white rounded-lg text-xs font-bold text-slate-800 border border-slate-200">
-                    {memberMessage}
-                  </div>
-                )}
-
-                <div className="space-y-2">
-                  <SearchableEmployeeSelect
-                    employees={availableEmployees}
-                    selectedEmployeeId={selectedEmpToAdd}
-                    onSelectEmployee={(empId) => setSelectedEmpToAdd(empId)}
-                    placeholder="Type employee name or ID to filter project candidates..."
-                  />
-
-                  <div className="flex justify-end pt-1">
-                    <button
-                      onClick={handleAddMemberToProject}
-                      disabled={!selectedEmpToAdd || memberActionLoading}
-                      className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all disabled:opacity-50 shrink-0 shadow-xs"
-                    >
-                      {memberActionLoading ? 'Adding...' : 'Add Member to Project'}
-                    </button>
-                  </div>
+              {memberMessage && (
+                <div className="p-2 bg-white rounded-lg text-xs font-bold text-slate-800 border border-slate-200">
+                  {memberMessage}
                 </div>
-              </div>
+              )}
 
-              {/* Assigned Employees List */}
-              <div className="space-y-3">
-                <h4 className="font-bold text-xs text-slate-800 uppercase tracking-wider">
-                  Current Assigned Team Members ({membersList.length})
-                </h4>
-                
-                {membersList.length === 0 ? (
-                  <div className="p-6 text-center text-xs text-slate-400 bg-slate-50 rounded-2xl">
-                    No team members assigned yet. Use the dropdown above to add employees!
-                  </div>
-                ) : (
-                  <div className="space-y-2 max-h-56 overflow-y-auto">
-                    {membersList.map((emp: any) => (
-                      <div
-                        key={emp._id || emp.employeeId}
-                        className="p-3 bg-white rounded-2xl border border-slate-100 flex items-center justify-between text-xs hover:bg-[#FAF7F2] transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-slate-900 text-[#FBC48B] font-bold flex items-center justify-center text-xs">
-                            {(emp.name || 'E').charAt(0)}
-                          </div>
-                          <div>
-                            <div className="font-bold text-slate-900">{emp.name || 'Team Member'}</div>
-                            <span className="text-[11px] text-slate-400 font-medium">{emp.designation || 'Specialist'} • {emp.department || 'Engineering'}</span>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                          {emp.seatId ? (
-                            <span className="px-2.5 py-1 bg-emerald-50 text-emerald-800 font-bold rounded-full text-[10px] border border-emerald-200 flex items-center gap-1">
-                              <MapPin className="w-3 h-3" />
-                              Seat {typeof emp.seatId === 'object' ? emp.seatId.seatNumber : emp.seatId}
-                            </span>
-                          ) : (
-                            <span className="px-2.5 py-1 bg-amber-50 text-amber-800 font-bold rounded-full text-[10px] border border-amber-200">
-                              Pending Seat
-                            </span>
-                          )}
-
-                          {['admin', 'hr', 'pm', 'employee'].includes(user?.role || 'admin') && (
-                            <button
-                              onClick={() => handleRemoveMemberFromProject(emp._id)}
-                              title="Remove Member from Project"
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex justify-end">
-                <button
-                  onClick={() => setSelectedProject(null)}
-                  className="px-5 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold text-xs hover:bg-slate-200"
+              <div className="flex items-center gap-2">
+                <select
+                  value={selectedEmpToAdd}
+                  onChange={(e) => setSelectedEmpToAdd(e.target.value)}
+                  className="flex-1 px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-slate-900 font-medium"
                 >
-                  Close Project Card
+                  <option value="">-- Select Employee to Assign --</option>
+                  {availableEmployees.map((emp) => (
+                    <option key={emp._id} value={emp._id}>
+                      {emp.name} ({emp.employeeId}) • {emp.department} {emp.projectId ? `[Currently: ${emp.projectId.code || 'Assigned'}]` : '[Unassigned]'}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  onClick={handleAddMemberToProject}
+                  disabled={!selectedEmpToAdd || memberActionLoading}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all disabled:opacity-50 shrink-0"
+                >
+                  {memberActionLoading ? 'Adding...' : 'Add Member'}
                 </button>
               </div>
             </div>
+
+            {/* Assigned Employees List */}
+            <div className="space-y-3">
+              <h4 className="font-bold text-xs text-slate-800 uppercase tracking-wider">
+                Current Assigned Team Members ({selectedProject.assignedEmployees.length})
+              </h4>
+              
+              {selectedProject.assignedEmployees.length === 0 ? (
+                <div className="p-6 text-center text-xs text-slate-400 bg-slate-50 rounded-2xl">
+                  No team members assigned yet. Use the dropdown above to add employees!
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-56 overflow-y-auto">
+                  {selectedProject.assignedEmployees.map((emp: any) => (
+                    <div
+                      key={emp._id}
+                      className="p-3 bg-white rounded-2xl border border-slate-100 flex items-center justify-between text-xs hover:bg-[#FAF7F2] transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-slate-900 text-[#FBC48B] font-bold flex items-center justify-center text-xs">
+                          {emp.name.charAt(0)}
+                        </div>
+                        <div>
+                          <div className="font-bold text-slate-900">{emp.name}</div>
+                          <span className="text-[11px] text-slate-400 font-medium">{emp.designation} • {emp.department}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        {emp.seatId ? (
+                          <span className="px-2.5 py-1 bg-emerald-50 text-emerald-800 font-bold rounded-full text-[10px] border border-emerald-200 flex items-center gap-1">
+                            <MapPin className="w-3 h-3" />
+                            Seat {emp.seatId.seatNumber}
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-1 bg-amber-50 text-amber-800 font-bold rounded-full text-[10px] border border-amber-200">
+                            Pending Seat
+                          </span>
+                        )}
+
+                        {['admin', 'hr', 'pm'].includes(user?.role || '') && (
+                          <button
+                            onClick={() => handleRemoveMemberFromProject(emp._id)}
+                            title="Remove Member from Project"
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="pt-3 border-t border-slate-100 flex justify-end">
+              <button
+                onClick={() => setSelectedProject(null)}
+                className="px-5 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold text-xs hover:bg-slate-200"
+              >
+                Close Project Card
+              </button>
+            </div>
           </div>
-        );
-      })()}
+        </div>
+      )}
     </div>
   );
 };

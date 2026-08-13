@@ -158,11 +158,9 @@ export const login = async (req: AuthRequest, res: Response) => {
     // 1. Try MongoDB Lookup first if connected
     if (User.db.readyState === 1) {
       try {
-        user = await User.findOne({ email: cleanEmail }).maxTimeMS(2000).lean();
+        user = await User.findOne({ email: cleanEmail });
         if (user && user.employeeId) {
           employeeInfo = await Employee.findById(user.employeeId)
-            .maxTimeMS(2000)
-            .lean()
             .populate('projectId', 'name code')
             .populate('seatId', 'seatNumber status');
         }

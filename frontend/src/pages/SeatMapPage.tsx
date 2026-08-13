@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { SearchableEmployeeSelect } from '../components/SearchableEmployeeSelect';
 import {
   Grid,
   Layers,
@@ -20,7 +19,18 @@ import { useAuth } from '../context/AuthContext';
 
 export const SeatMapPage: React.FC = () => {
   const { user } = useAuth();
+  const [floors, setFloors] = useState<Floor[]>([]);
+  const [zones, setZones] = useState<Zone[]>([]);
+  const [seats, setSeats] = useState<Seat[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [unallocatedEmployees, setUnallocatedEmployees] = useState<Employee[]>([]);
 
+  const [selectedFloorId, setSelectedFloorId] = useState<string>('');
+  const [selectedZoneId, setSelectedZoneId] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [projectFilter, setProjectFilter] = useState<string>('');
+
+  const [loading, setLoading] = useState(true);
   const [selectedSeat, setSelectedSeat] = useState<Seat | null>(null);
 
   // Direct Assign / Request states
@@ -28,77 +38,6 @@ export const SeatMapPage: React.FC = () => {
   const [requestReason, setRequestReason] = useState<string>('');
   const [actionSubmitting, setActionSubmitting] = useState(false);
   const [actionSuccessMsg, setActionSuccessMsg] = useState('');
-
-  const defaultFloors: Floor[] = [
-    { _id: 'fl1', floorNumber: 1, name: 'Floor 1 - Executive Wing', building: 'Ethara HQ' },
-    { _id: 'fl2', floorNumber: 2, name: 'Floor 2 - Engineering Hub', building: 'Ethara HQ' },
-    { _id: 'fl3', floorNumber: 3, name: 'Floor 3 - Product & Design', building: 'Ethara HQ' },
-    { _id: 'fl4', floorNumber: 4, name: 'Floor 4 - AI Innovation Lab', building: 'Ethara HQ' },
-    { _id: 'fl5', floorNumber: 5, name: 'Floor 5 - Operations & Sales', building: 'Ethara HQ' }
-  ];
-
-  const generateMockSeats = (floorId: string, zoneId?: string, stFilter?: string) => {
-    const mockList: Seat[] = [];
-    const floorNum = floorId.includes('2') ? 2 : floorId.includes('3') ? 3 : floorId.includes('4') ? 4 : floorId.includes('5') ? 5 : 1;
-
-    for (let i = 1; i <= 60; i++) {
-      const isA = i <= 30;
-      const zoneName = isA ? 'Zone A - East' : 'Zone B - West';
-      const zId = isA ? `z_a_${floorNum}` : `z_b_${floorNum}`;
-
-      if (zoneId && zoneId !== zId) continue;
-
-      let seatStatus: 'available' | 'occupied' | 'reserved' | 'maintenance' = 'available';
-      if (i % 6 === 0) seatStatus = 'reserved';
-      else if (i % 7 === 0) seatStatus = 'maintenance';
-      else if (i % 2 === 0) seatStatus = 'occupied';
-
-      if (stFilter && stFilter !== seatStatus) continue;
-
-      mockList.push({
-        _id: `mock_seat_f${floorNum}_${i}`,
-        seatNumber: `F${floorNum}-${isA ? 'ZA' : 'ZB'}-${String(i).padStart(3, '0')}`,
-        floorId: { _id: floorId, floorNumber: floorNum, name: `Floor ${floorNum}` } as any,
-        zoneId: { _id: zId, zoneName } as any,
-        status: seatStatus,
-        occupiedBy: seatStatus === 'occupied' ? ({
-          _id: `mock_emp_${i}`,
-          name: `Employee ${i}`,
-          employeeId: `ETH-${String(1000 + i).padStart(5, '0')}`,
-          designation: 'Specialist',
-          department: 'Engineering'
-        } as any) : null
-      });
-    }
-
-    return mockList;
-  };
-
-  const defaultUnallocatedEmployees: Employee[] = [
-    { _id: 'emp_u1', employeeId: 'ETH-00101', name: 'Pooja Sharma', designation: 'Senior Specialist', department: 'Engineering' } as any,
-    { _id: 'emp_u2', employeeId: 'ETH-00102', name: 'Rohan Kumar', designation: 'Associate Specialist', department: 'Engineering' } as any,
-    { _id: 'emp_u3', employeeId: 'ETH-00103', name: 'Kavya Rao', designation: 'Product Designer', department: 'Design' } as any,
-    { _id: 'emp_u4', employeeId: 'ETH-00104', name: 'Michael Davis', designation: 'Backend Architect', department: 'Engineering' } as any,
-    { _id: 'emp_u5', employeeId: 'ETH-00105', name: 'Anita Desai', designation: 'QA Engineer', department: 'Operations' } as any,
-    { _id: 'emp_u6', employeeId: 'ETH-00106', name: 'David Wilson', designation: 'Cloud DevOps Specialist', department: 'Engineering' } as any,
-    { _id: 'emp_u7', employeeId: 'ETH-00107', name: 'Priya Sharma', designation: 'UI/UX Specialist', department: 'Design' } as any,
-    { _id: 'emp_u8', employeeId: 'ETH-00108', name: 'Rahul Verma', designation: 'Frontend Specialist', department: 'Engineering' } as any
-  ];
-
-  const [floors, setFloors] = useState<Floor[]>(defaultFloors);
-  const [selectedFloorId, setSelectedFloorId] = useState<string>(defaultFloors[0]._id);
-  const [zones, setZones] = useState<Zone[]>([
-    { _id: `z_a_${defaultFloors[0]._id}`, zoneName: 'Zone A - East Wing', capacity: 100, floorId: defaultFloors[0]._id },
-    { _id: `z_b_${defaultFloors[0]._id}`, zoneName: 'Zone B - West Wing', capacity: 100, floorId: defaultFloors[0]._id }
-  ]);
-  const [selectedZoneId, setSelectedZoneId] = useState<string>('');
-  const [seats, setSeats] = useState<Seat[]>(() => generateMockSeats(defaultFloors[0]._id));
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [unallocatedEmployees, setUnallocatedEmployees] = useState<Employee[]>(defaultUnallocatedEmployees);
-
-  const [statusFilter, setStatusFilter] = useState<string>('');
-  const [projectFilter, setProjectFilter] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
     fetchInitialData();
@@ -117,37 +56,30 @@ export const SeatMapPage: React.FC = () => {
   const fetchInitialData = async () => {
     try {
       const [flRes, projRes, empRes] = await Promise.all([
-        api.get('/seats/floors', { timeout: 1500 }),
-        api.get('/projects', { timeout: 1500 }),
-        api.get('/employees?seatAllocationStatus=pending&limit=100', { timeout: 1500 })
+        api.get('/seats/floors'),
+        api.get('/projects'),
+        api.get('/employees?seatAllocationStatus=pending&limit=100')
       ]);
 
-      const flList = Array.isArray(flRes.data) && flRes.data.length > 0 ? flRes.data : defaultFloors;
-      const projList = Array.isArray(projRes.data) ? projRes.data : projRes.data?.data || [];
-      const empList = Array.isArray(empRes.data) && empRes.data.length > 0 ? empRes.data : empRes.data?.data || empRes.data?.employees || defaultUnallocatedEmployees;
+      setFloors(flRes.data);
+      setProjects(projRes.data);
+      setUnallocatedEmployees(empRes.data.data);
 
-      setFloors(flList);
-      setProjects(projList);
-      setUnallocatedEmployees(empList);
+      if (flRes.data.length > 0) {
+        setSelectedFloorId(flRes.data[0]._id);
+      }
     } catch (err) {
-      console.warn('Background sync delay fetching floor metadata. Using default initial state.');
+      console.error('Failed to load initial floor data:', err);
     }
   };
 
   const fetchZonesForFloor = async (floorId: string) => {
     try {
       const res = await api.get(`/seats/floors/${floorId}/zones`);
-      const zList = Array.isArray(res.data) && res.data.length > 0 ? res.data : [
-        { _id: `z_a_${floorId}`, zoneName: 'Zone A - East Wing', capacity: 100, floorId },
-        { _id: `z_b_${floorId}`, zoneName: 'Zone B - West Wing', capacity: 100, floorId }
-      ];
-      setZones(zList);
-      setSelectedZoneId('');
+      setZones(res.data);
+      setSelectedZoneId(''); // Reset zone filter
     } catch (err) {
-      setZones([
-        { _id: `z_a_${floorId}`, zoneName: 'Zone A - East Wing', capacity: 100, floorId },
-        { _id: `z_b_${floorId}`, zoneName: 'Zone B - West Wing', capacity: 100, floorId }
-      ]);
+      console.error('Failed to fetch zones:', err);
     }
   };
 
@@ -160,16 +92,10 @@ export const SeatMapPage: React.FC = () => {
       if (statusFilter) params.append('status', statusFilter);
       if (projectFilter) params.append('projectId', projectFilter);
 
-      const res = await api.get(`/seats?${params.toString()}`, { timeout: 2500 });
-      const seatList = Array.isArray(res.data) ? res.data : res.data?.seats || res.data?.data || [];
-
-      if (seatList.length > 0) {
-        setSeats(seatList);
-      } else {
-        setSeats(generateMockSeats(selectedFloorId, selectedZoneId, statusFilter));
-      }
+      const res = await api.get(`/seats?${params.toString()}`);
+      setSeats(res.data);
     } catch (err) {
-      setSeats(generateMockSeats(selectedFloorId, selectedZoneId, statusFilter));
+      console.error('Failed to fetch seats:', err);
     } finally {
       setLoading(false);
     }
@@ -179,39 +105,19 @@ export const SeatMapPage: React.FC = () => {
     if (!selectedSeat || !assignEmployeeId) return;
     setActionSubmitting(true);
     setActionSuccessMsg('');
-
-    const assignedEmp = unallocatedEmployees.find((e) => e._id === assignEmployeeId) || {
-      _id: assignEmployeeId,
-      name: 'Assigned Specialist',
-      employeeId: `ETH-${Math.floor(10000 + Math.random() * 90000)}`,
-      designation: 'Specialist',
-      department: 'Engineering'
-    };
-
-    // 0ms Optimistic Seat Allocation update
-    setSeats((prev) =>
-      prev.map((s) =>
-        s._id === selectedSeat._id
-          ? {
-              ...s,
-              status: 'occupied',
-              occupiedBy: assignedEmp as any
-            }
-          : s
-      )
-    );
-    setUnallocatedEmployees((prev) => prev.filter((e) => e._id !== assignEmployeeId));
-    setActionSuccessMsg(`Seat ${selectedSeat.seatNumber} successfully allocated to ${assignedEmp.name}!`);
-    setSelectedSeat(null);
-    setAssignEmployeeId('');
-
     try {
       await api.post('/seats/assign', {
         seatId: selectedSeat._id,
         employeeId: assignEmployeeId
-      }, { timeout: 1500 });
+      });
+      setActionSuccessMsg(`Seat ${selectedSeat.seatNumber} successfully allocated!`);
+      setSelectedSeat(null);
+      fetchSeats();
+      // refresh unallocated
+      const empRes = await api.get('/employees?seatAllocationStatus=pending&limit=100');
+      setUnallocatedEmployees(empRes.data.data);
     } catch (err: any) {
-      console.warn('Async seat assignment completed with local state active.');
+      alert(err.response?.data?.message || 'Assignment failed.');
     } finally {
       setActionSubmitting(false);
     }
@@ -222,30 +128,12 @@ export const SeatMapPage: React.FC = () => {
     if (!window.confirm(`Release seat ${selectedSeat.seatNumber}? Occupant will become unallocated.`)) return;
 
     setActionSubmitting(true);
-    const prevOccupant = selectedSeat.occupiedBy;
-
-    // 0ms Optimistic Seat Release update
-    setSeats((prev) =>
-      prev.map((s) =>
-        s._id === selectedSeat._id
-          ? {
-              ...s,
-              status: 'available',
-              occupiedBy: undefined
-            }
-          : s
-      )
-    );
-    if (prevOccupant) {
-      setUnallocatedEmployees((prev) => [prevOccupant as any, ...prev]);
-    }
-    setActionSuccessMsg(`Seat ${selectedSeat.seatNumber} released!`);
-    setSelectedSeat(null);
-
     try {
-      await api.post(`/seats/${selectedSeat._id}/release`, {}, { timeout: 1500 });
+      await api.post(`/seats/${selectedSeat._id}/release`);
+      setSelectedSeat(null);
+      fetchSeats();
     } catch (err: any) {
-      console.warn('Async seat release completed with local state active.');
+      alert(err.response?.data?.message || 'Release failed.');
     } finally {
       setActionSubmitting(false);
     }
@@ -479,14 +367,12 @@ export const SeatMapPage: React.FC = () => {
                 </span>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm">
-                    {(selectedSeat.occupiedBy.name || selectedSeat.occupiedBy.employeeId || 'E').charAt(0)}
+                    {selectedSeat.occupiedBy.name.charAt(0)}
                   </div>
                   <div>
-                    <h4 className="font-semibold text-slate-900 text-sm">
-                      {selectedSeat.occupiedBy.name || selectedSeat.occupiedBy.employeeId || 'Assigned Employee'}
-                    </h4>
+                    <h4 className="font-semibold text-slate-900 text-sm">{selectedSeat.occupiedBy.name}</h4>
                     <p className="text-xs text-slate-500">
-                      {selectedSeat.occupiedBy.designation || 'Specialist'} • {selectedSeat.occupiedBy.department || 'Engineering'}
+                      {selectedSeat.occupiedBy.designation} • {selectedSeat.occupiedBy.department}
                     </p>
                   </div>
                 </div>
@@ -505,9 +391,9 @@ export const SeatMapPage: React.FC = () => {
               </div>
             )}
 
-            {/* Action Form (Direct for Admin/HR/PM/Employee) */}
+            {/* Action Form (Direct for Admin/HR, Request for PM) */}
             <div className="pt-2 border-t border-slate-100 space-y-3">
-              {['admin', 'hr', 'pm', 'employee'].includes(user?.role || 'admin') ? (
+              {['admin', 'hr'].includes(user?.role || '') ? (
                 <div className="space-y-3">
                   <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
                     Direct Action (Admin / HR)
@@ -522,13 +408,19 @@ export const SeatMapPage: React.FC = () => {
                     </button>
                   ) : (
                     <div className="space-y-2">
-                      <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">Assign Unallocated Employee</label>
-                      <SearchableEmployeeSelect
-                        employees={unallocatedEmployees}
-                        selectedEmployeeId={assignEmployeeId}
-                        onSelectEmployee={(empId) => setAssignEmployeeId(empId)}
-                        placeholder="Type employee name or ID to filter choices..."
-                      />
+                      <label className="block text-xs font-medium text-slate-700">Assign Unallocated Employee</label>
+                      <select
+                        value={assignEmployeeId}
+                        onChange={(e) => setAssignEmployeeId(e.target.value)}
+                        className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl"
+                      >
+                        <option value="">Select Employee...</option>
+                        {unallocatedEmployees.map((emp) => (
+                          <option key={emp._id} value={emp._id}>
+                            {emp.employeeId} - {emp.name} ({emp.department})
+                          </option>
+                        ))}
+                      </select>
                       <button
                         onClick={handleDirectAssign}
                         disabled={!assignEmployeeId || actionSubmitting}

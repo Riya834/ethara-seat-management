@@ -19,73 +19,14 @@ export const RequestsPage: React.FC = () => {
     fetchRequests();
   }, [statusFilter]);
 
-  const defaultRequests: SeatRequest[] = [
-    {
-      _id: 'req_1',
-      requestNumber: 'REQ-2026-001',
-      type: 'transfer',
-      employeeId: {
-        _id: 'emp_req_1',
-        name: 'John Doe',
-        employeeId: 'ETH-00004',
-        designation: 'Senior Frontend Engineer',
-        department: 'Engineering'
-      } as any,
-      toSeatId: {
-        _id: 'seat_t1',
-        seatNumber: 'F2-ZB-016',
-        floorId: { _id: 'fl2', floorNumber: 2, name: 'Floor 2' }
-      } as any,
-      requestedBy: {
-        _id: 'usr_pm_1',
-        name: 'Alex PM',
-        role: 'pm'
-      } as any,
-      reason: 'Relocating to AI Core pod for high-bandwidth pair programming collaboration.',
-      status: 'pending',
-      createdAt: new Date(Date.now() - 2 * 86400000).toISOString()
-    } as any,
-    {
-      _id: 'req_2',
-      requestNumber: 'REQ-2026-002',
-      type: 'assign',
-      employeeId: {
-        _id: 'emp_req_2',
-        name: 'Priya Sharma',
-        employeeId: 'ETH-00005',
-        designation: 'Product Designer',
-        department: 'Design'
-      } as any,
-      toSeatId: {
-        _id: 'seat_t2',
-        seatNumber: 'F3-ZA-005',
-        floorId: { _id: 'fl3', floorNumber: 3, name: 'Floor 3' }
-      } as any,
-      requestedBy: {
-        _id: 'usr_pm_1',
-        name: 'Alex PM',
-        role: 'pm'
-      } as any,
-      reason: 'New project onboarding for Project Beacon Analytics.',
-      status: 'pending',
-      createdAt: new Date(Date.now() - 1 * 86400000).toISOString()
-    } as any
-  ];
-
   const fetchRequests = async () => {
     setLoading(true);
     try {
       const url = statusFilter ? `/seat-requests?status=${statusFilter}` : '/seat-requests';
-      const res = await api.get(url, { timeout: 2500 });
-      const reqList = Array.isArray(res.data) ? res.data : res.data?.data || res.data?.requests || [];
-      if (reqList.length > 0) {
-        setRequests(reqList);
-      } else {
-        setRequests(defaultRequests.filter((r) => !statusFilter || r.status === statusFilter));
-      }
+      const res = await api.get(url);
+      setRequests(res.data);
     } catch (err) {
-      console.warn('Network delay loading seat requests. Using default requests inbox:');
-      setRequests(defaultRequests.filter((r) => !statusFilter || r.status === statusFilter));
+      console.error('Failed to load seat requests:', err);
     } finally {
       setLoading(false);
     }
@@ -95,32 +36,16 @@ export const RequestsPage: React.FC = () => {
     if (!reviewingRequest) return;
     setReviewSubmitting(true);
 
-    const targetReqId = reviewingRequest._id;
-    const newStatus = action === 'approve' ? 'approved' : 'rejected';
-
-    // 0ms Optimistic Status update
-    setRequests((prev) =>
-      prev.map((r) =>
-        r._id === targetReqId
-          ? {
-              ...r,
-              status: newStatus as any,
-              reviewedBy: { _id: user?._id || 'usr_1', name: user?.name || 'Reviewer', role: user?.role || 'admin' } as any,
-              comments: reviewComment
-            }
-          : r
-      )
-    );
-    setReviewingRequest(null);
-    setReviewComment('');
-
     try {
-      await api.put(`/seat-requests/${targetReqId}/review`, {
+      await api.put(`/seat-requests/${reviewingRequest._id}/review`, {
         action,
         comments: reviewComment
-      }, { timeout: 1500 });
+      });
+      setReviewingRequest(null);
+      setReviewComment('');
+      fetchRequests();
     } catch (err: any) {
-      console.warn('Async request review completed with local state active.');
+      alert(err.response?.data?.message || 'Review action failed.');
     } finally {
       setReviewSubmitting(false);
     }
@@ -194,12 +119,12 @@ export const RequestsPage: React.FC = () => {
                       </span>
                     </td>
                     <td className="py-3.5 px-4">
-                      <div className="font-semibold text-slate-900">{req.employeeId?.name || req.employeeId?.employeeId || 'Employee Candidate'}</div>
-                      <div className="text-[11px] text-slate-400">{req.employeeId?.employeeId || 'ETH-00101'} • {req.employeeId?.department || 'Engineering'}</div>
+                      <div className="font-semibold text-slate-900">{req.employeeId?.name}</div>
+                      <div className="text-[11px] text-slate-400">{req.employeeId?.employeeId} • {req.employeeId?.department}</div>
                     </td>
                     <td className="py-3.5 px-4">
-                      <div className="font-medium text-slate-800">{req.requestedBy?.name || 'Alex Project Manager'}</div>
-                      <div className="text-[10px] text-slate-400 uppercase">{req.requestedBy?.role || 'PM'}</div>
+                      <div className="font-medium text-slate-800">{req.requestedBy?.name}</div>
+                      <div className="text-[10px] text-slate-400 uppercase">{req.requestedBy?.role}</div>
                     </td>
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-1.5">
@@ -237,7 +162,7 @@ export const RequestsPage: React.FC = () => {
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-right">
-                      {['admin', 'hr', 'pm', 'employee'].includes(user?.role || 'admin') && req.status === 'pending' ? (
+                      {['admin', 'hr'].includes(user?.role || '') && req.status === 'pending' ? (
                         <button
                           onClick={() => {
                             setReviewingRequest(req);
