@@ -125,7 +125,7 @@ exports.app.use((err, req, res, next) => {
 const startServer = async () => {
     const PORT = process.env.PORT || 5000;
     const MONGODB_URI = process.env.MONGODB_URI ||
-        'mongodb://127.0.0.1:27017/ethara_seat_db';
+        'mongodb+srv://new_seatManagement:Ethara1230@cluster0.ty7ichr.mongodb.net/ethara_seat_db?retryWrites=true&w=majority&appName=Cluster0';
     if (process.env.NODE_ENV !== 'test') {
         let connected = false;
         try {
