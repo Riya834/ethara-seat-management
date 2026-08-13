@@ -8,8 +8,6 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const mongoose_1 = __importDefault(require("mongoose"));
-const path_1 = __importDefault(require("path"));
-const fs_1 = __importDefault(require("fs"));
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const employeeRoutes_1 = __importDefault(require("./routes/employeeRoutes"));
 const seatRoutes_1 = __importDefault(require("./routes/seatRoutes"));
@@ -31,16 +29,24 @@ exports.app.use((0, cors_1.default)({
 }));
 exports.app.use(express_1.default.json());
 exports.app.use(express_1.default.urlencoded({ extended: true }));
-// Serve frontend static assets if built together
-const frontendDistPath = path_1.default.join(__dirname, '../../frontend/dist');
-if (fs_1.default.existsSync(frontendDistPath)) {
-    exports.app.use(express_1.default.static(frontendDistPath));
-}
-// Root Route
+// Root Route - Clean API Connection & Success Status JSON Response
 exports.app.get('/', (req, res) => {
+    const isConnected = mongoose_1.default.connection.readyState === 1;
+    const host = mongoose_1.default.connection.host || 'none';
     res.json({
         success: true,
-        message: 'Ethara Seat Management Backend Running',
+        status: 'connected',
+        message: 'Ethara Seat Management Backend Server Active & Connected',
+        database: {
+            connected: isConnected,
+            host,
+            name: mongoose_1.default.connection.name || 'ethara_seat_db',
+            connectionType: isConnected
+                ? host.includes('mongodb.net') || host.includes('cluster0')
+                    ? 'MongoDB Atlas Cloud'
+                    : 'Local MongoDB'
+                : 'In-Memory Fallback'
+        },
         health: '/api/health',
         timestamp: new Date().toISOString()
     });
@@ -76,42 +82,13 @@ exports.app.use('/api/import', importRoutes_1.default);
 exports.app.use('/api/analytics', analyticsRoutes_1.default);
 exports.app.use('/api/ai', aiRoutes_1.default);
 exports.app.use('/api/audit', auditRoutes_1.default);
-// API 404 Handler
-exports.app.use('/api/*', (req, res) => {
+// Backend API 404 Handler - Pure JSON Response for invalid routes
+exports.app.use('*', (req, res) => {
     res.status(404).json({
         success: false,
-        message: 'API Endpoint not found',
+        message: 'Backend API Endpoint Not Found',
         requestedUrl: req.originalUrl
     });
-});
-// Single Page Application (SPA) Wildcard Fallback for /login, /signup, /dashboard, etc.
-exports.app.use('*', (req, res) => {
-    const indexPath = path_1.default.join(frontendDistPath, 'index.html');
-    if (fs_1.default.existsSync(indexPath)) {
-        return res.sendFile(indexPath);
-    }
-    res.status(200).send(`
-    <!DOCTYPE html>
-    <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <title>Ethara Workplace Portal - Active</title>
-        <style>
-          body { font-family: system-ui, sans-serif; background: #FAF7F2; color: #0F172A; text-align: center; padding: 50px; }
-          .card { background: white; max-width: 500px; margin: 0 auto; padding: 30px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-          .btn { display: inline-block; background: #FBC48B; color: #0F172A; padding: 12px 24px; border-radius: 99px; text-decoration: none; font-weight: bold; margin-top: 15px; }
-        </style>
-      </head>
-      <body>
-        <div class="card">
-          <h2>Ethara Backend Server Active</h2>
-          <p>Database Connected & Healthy</p>
-          <p>Requested Path: <code>${req.originalUrl}</code></p>
-          <a href="/api/health" class="btn">View API Health Status</a>
-        </div>
-      </body>
-    </html>
-  `);
 });
 // Global Error Handler
 exports.app.use((err, req, res, next) => {

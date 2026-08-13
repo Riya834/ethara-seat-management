@@ -2,8 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
-import path from 'path';
-import fs from 'fs';
 
 import authRoutes from './routes/authRoutes';
 import employeeRoutes from './routes/employeeRoutes';
@@ -33,17 +31,25 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve frontend static assets if built together
-const frontendDistPath = path.join(__dirname, '../../frontend/dist');
-if (fs.existsSync(frontendDistPath)) {
-  app.use(express.static(frontendDistPath));
-}
-
-// Root Route
+// Root Route - Clean API Connection & Success Status JSON Response
 app.get('/', (req, res) => {
+  const isConnected = mongoose.connection.readyState === 1;
+  const host = mongoose.connection.host || 'none';
+
   res.json({
     success: true,
-    message: 'Ethara Seat Management Backend Running',
+    status: 'connected',
+    message: 'Ethara Seat Management Backend Server Active & Connected',
+    database: {
+      connected: isConnected,
+      host,
+      name: mongoose.connection.name || 'ethara_seat_db',
+      connectionType: isConnected
+        ? host.includes('mongodb.net') || host.includes('cluster0')
+          ? 'MongoDB Atlas Cloud'
+          : 'Local MongoDB'
+        : 'In-Memory Fallback'
+    },
     health: '/api/health',
     timestamp: new Date().toISOString()
   });
@@ -83,44 +89,13 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/audit', auditRoutes);
 
-// API 404 Handler
-app.use('/api/*', (req, res) => {
+// Backend API 404 Handler - Pure JSON Response for invalid routes
+app.use('*', (req, res) => {
   res.status(404).json({
     success: false,
-    message: 'API Endpoint not found',
+    message: 'Backend API Endpoint Not Found',
     requestedUrl: req.originalUrl
   });
-});
-
-// Single Page Application (SPA) Wildcard Fallback for /login, /signup, /dashboard, etc.
-app.use('*', (req, res) => {
-  const indexPath = path.join(frontendDistPath, 'index.html');
-  if (fs.existsSync(indexPath)) {
-    return res.sendFile(indexPath);
-  }
-
-  res.status(200).send(`
-    <!DOCTYPE html>
-    <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <title>Ethara Workplace Portal - Active</title>
-        <style>
-          body { font-family: system-ui, sans-serif; background: #FAF7F2; color: #0F172A; text-align: center; padding: 50px; }
-          .card { background: white; max-width: 500px; margin: 0 auto; padding: 30px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-          .btn { display: inline-block; background: #FBC48B; color: #0F172A; padding: 12px 24px; border-radius: 99px; text-decoration: none; font-weight: bold; margin-top: 15px; }
-        </style>
-      </head>
-      <body>
-        <div class="card">
-          <h2>Ethara Backend Server Active</h2>
-          <p>Database Connected & Healthy</p>
-          <p>Requested Path: <code>${req.originalUrl}</code></p>
-          <a href="/api/health" class="btn">View API Health Status</a>
-        </div>
-      </body>
-    </html>
-  `);
 });
 
 // Global Error Handler
