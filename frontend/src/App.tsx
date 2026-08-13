@@ -68,7 +68,8 @@ export const App: React.FC = () => {
     <AuthProvider>
       <Router>
         <Routes>
-          <Route path="/login" element={<LoginPage />} />
+          <Route path="/login" element={<LoginPage initialMode="signin" />} />
+          <Route path="/signup" element={<LoginPage initialMode="signup" />} />
           <Route path="/*" element={<ProtectedLayout />} />
         </Routes>
       </Router>

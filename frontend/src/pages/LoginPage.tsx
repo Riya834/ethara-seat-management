@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Building2,
@@ -20,12 +20,24 @@ import {
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
-export const LoginPage: React.FC = () => {
-  const { login } = useAuth();
+export const LoginPage: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ initialMode = 'signin' }) => {
+  const { login, user } = useAuth();
   const navigate = useNavigate();
 
   // Mode: 'signin' | 'signup'
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [mode, setMode] = useState<'signin' | 'signup'>(initialMode);
+
+  useEffect(() => {
+    setMode(initialMode);
+  }, [initialMode]);
+
+  // If already logged in, redirect immediately
+  useEffect(() => {
+    if (user) {
+      const targetPath = user.role === 'employee' ? '/directory' : '/dashboard';
+      navigate(targetPath, { replace: true });
+    }
+  }, [user, navigate]);
 
   // Sign In fields
   const [email, setEmail] = useState('');
@@ -150,7 +162,7 @@ export const LoginPage: React.FC = () => {
 
       {/* Top Navigation Header */}
       <header className="w-full max-w-7xl mx-auto px-8 py-6 flex items-center justify-between z-10">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/login')}>
           <div className="w-9 h-9 rounded-xl bg-slate-900 flex items-center justify-center text-white font-bold">
             <Building2 className="w-5 h-5 text-[#FBC48B]" />
           </div>
@@ -174,7 +186,9 @@ export const LoginPage: React.FC = () => {
 
           <button
             onClick={() => {
-              setMode(mode === 'signin' ? 'signup' : 'signin');
+              const nextMode = mode === 'signin' ? 'signup' : 'signin';
+              setMode(nextMode);
+              navigate(nextMode === 'signup' ? '/signup' : '/login', { replace: true });
               setError('');
               setSuccessMsg('');
             }}
@@ -182,6 +196,7 @@ export const LoginPage: React.FC = () => {
           >
             {mode === 'signin' ? 'Sign up' : 'Sign in'}
           </button>
+
           <button
             onClick={() => fillQuickDemo('admin@ethara.com')}
             className="px-4 py-2 bg-[#FBC48B] hover:bg-[#f7b674] text-slate-900 rounded-full font-bold text-xs shadow-2xs transition-all"
@@ -452,7 +467,9 @@ export const LoginPage: React.FC = () => {
           <div className="text-center pt-2 border-t border-slate-100">
             <button
               onClick={() => {
-                setMode(mode === 'signin' ? 'signup' : 'signin');
+                const nextMode = mode === 'signin' ? 'signup' : 'signin';
+                setMode(nextMode);
+                navigate(nextMode === 'signup' ? '/signup' : '/login', { replace: true });
                 setError('');
                 setSuccessMsg('');
               }}
