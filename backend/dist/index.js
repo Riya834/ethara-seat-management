@@ -17,11 +17,27 @@ const importRoutes_1 = __importDefault(require("./routes/importRoutes"));
 const analyticsRoutes_1 = __importDefault(require("./routes/analyticsRoutes"));
 const aiRoutes_1 = __importDefault(require("./routes/aiRoutes"));
 const auditRoutes_1 = __importDefault(require("./routes/auditRoutes"));
+const autoSeed_1 = require("./seed/autoSeed");
 dotenv_1.default.config();
 exports.app = (0, express_1.default)();
-exports.app.use((0, cors_1.default)());
+// Explicit CORS setup for Render cloud deployment & local dev
+exports.app.use((0, cors_1.default)({
+    origin: true,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
 exports.app.use(express_1.default.json());
 exports.app.use(express_1.default.urlencoded({ extended: true }));
+// Root Route
+exports.app.get('/', (req, res) => {
+    res.json({
+        success: true,
+        message: 'Ethara Seat Management Backend Running',
+        health: '/api/health',
+        timestamp: new Date().toISOString()
+    });
+});
 // Healthcheck & Detailed Database Status Inspection Endpoint
 exports.app.get('/api/health', (req, res) => {
     const isConnected = mongoose_1.default.connection.readyState === 1;
@@ -53,53 +69,69 @@ exports.app.use('/api/import', importRoutes_1.default);
 exports.app.use('/api/analytics', analyticsRoutes_1.default);
 exports.app.use('/api/ai', aiRoutes_1.default);
 exports.app.use('/api/audit', auditRoutes_1.default);
+// 404 Handler
+exports.app.use('*', (req, res) => {
+    res.status(404).json({
+        success: false,
+        message: 'Route not found',
+        requestedUrl: req.originalUrl
+    });
+});
 // Global Error Handler
 exports.app.use((err, req, res, next) => {
     console.error('Unhandled Server Error:', err);
     res.status(err.status || 500).json({
+        success: false,
         message: err.message || 'Internal Server Error',
         error: process.env.NODE_ENV === 'development' ? err : undefined
     });
 });
 const startServer = async () => {
     const PORT = process.env.PORT || 5000;
-    const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/ethara_seat_db';
+    const MONGODB_URI = process.env.MONGODB_URI ||
+        'mongodb://127.0.0.1:27017/ethara_seat_db';
     if (process.env.NODE_ENV !== 'test') {
         let connected = false;
-        // 1. Try primary configured MongoDB URI (e.g. Atlas)
         try {
-            await mongoose_1.default.connect(MONGODB_URI, { serverSelectionTimeoutMS: 5000 });
-            const isAtlas = mongoose_1.default.connection.host.includes('mongodb.net') || mongoose_1.default.connection.host.includes('cluster0');
+            await mongoose_1.default.connect(MONGODB_URI, {
+                serverSelectionTimeoutMS: 5000
+            });
+            const isAtlas = mongoose_1.default.connection.host.includes('mongodb.net') ||
+                mongoose_1.default.connection.host.includes('cluster0');
             console.log(`Connected to ${isAtlas ? 'MongoDB Atlas (Cloud)' : 'Database'} [Host: ${mongoose_1.default.connection.host}]`);
             connected = true;
+            // Auto seed database on cloud deployment if empty
+            (0, autoSeed_1.autoSeedIfEmpty)();
         }
         catch (err) {
             console.warn(`Primary MongoDB Connection Warning (${err.code || err.message}). Attempting local MongoDB fallback...`);
         }
-        // 2. If primary failed, try local MongoDB
-        if (!connected && !MONGODB_URI.includes('127.0.0.1') && !MONGODB_URI.includes('localhost')) {
+        if (!connected &&
+            !MONGODB_URI.includes('127.0.0.1') &&
+            !MONGODB_URI.includes('localhost')) {
             try {
-                await mongoose_1.default.connect('mongodb://127.0.0.1:27017/ethara_seat_db', { serverSelectionTimeoutMS: 2500 });
-                console.log(`Connected to Local MongoDB at mongodb://127.0.0.1:27017/ethara_seat_db`);
+                await mongoose_1.default.connect('mongodb://127.0.0.1:27017/ethara_seat_db', {
+                    serverSelectionTimeoutMS: 2500
+                });
+                console.log('Connected to Local MongoDB at mongodb://127.0.0.1:27017/ethara_seat_db');
                 connected = true;
             }
             catch (err) {
-                console.warn(`Local MongoDB unavailable. Using In-Memory Mock Store Fallback.`);
+                console.warn('Local MongoDB unavailable. Using In-Memory Mock Store Fallback.');
             }
         }
-        // 3. Start Express HTTP Server
         const server = exports.app.listen(PORT, () => {
             const type = connected
                 ? mongoose_1.default.connection.host.includes('mongodb.net')
                     ? 'MongoDB Atlas Cloud'
                     : 'Local MongoDB'
                 : 'In-Memory Fallback';
-            console.log(`Ethara Backend Server listening on http://localhost:${PORT} [${type}]`);
+            console.log(`Ethara Backend Server listening on port ${PORT} [${type}]`);
         });
         server.on('error', (err) => {
             if (err.code === 'EADDRINUSE') {
                 console.error(`\n❌ Error: Port ${PORT} is already in use by a running backend process.`);
-                console.error(`Stop the running background process or run: Stop-Process -Name node -Force\n`);
+                console.error('Stop the running background process or run: Stop-Process -Name node -Force\n');
                 process.exit(1);
             }
             else {

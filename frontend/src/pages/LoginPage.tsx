@@ -74,11 +74,9 @@ export const LoginPage: React.FC = () => {
         designation
       });
 
-      setSuccessMsg('Account created successfully! Signing you in...');
-      setTimeout(() => {
-        login(res.data.token, res.data.user);
-        navigate(res.data.user.role === 'employee' ? '/directory' : '/dashboard');
-      }, 1000);
+      setSuccessMsg('Account created successfully!');
+      login(res.data.token, res.data.user);
+      navigate(res.data.user.role === 'employee' ? '/directory' : '/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed. Email may already exist.');
     } finally {

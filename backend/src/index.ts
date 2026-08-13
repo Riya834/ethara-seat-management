@@ -12,12 +12,22 @@ import importRoutes from './routes/importRoutes';
 import analyticsRoutes from './routes/analyticsRoutes';
 import aiRoutes from './routes/aiRoutes';
 import auditRoutes from './routes/auditRoutes';
+import { autoSeedIfEmpty } from './seed/autoSeed';
 
 dotenv.config();
 
 export const app = express();
 
-app.use(cors());
+// Explicit CORS setup for Render cloud deployment & local dev
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  })
+);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -118,6 +128,9 @@ const startServer = async () => {
       );
 
       connected = true;
+
+      // Auto seed database on cloud deployment if empty
+      autoSeedIfEmpty();
     } catch (err: any) {
       console.warn(
         `Primary MongoDB Connection Warning (${
@@ -159,7 +172,7 @@ const startServer = async () => {
         : 'In-Memory Fallback';
 
       console.log(
-        `Ethara Backend Server listening on http://localhost:${PORT} [${type}]`
+        `Ethara Backend Server listening on port ${PORT} [${type}]`
       );
     });
 
