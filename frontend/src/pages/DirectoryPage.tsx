@@ -359,27 +359,35 @@ export const DirectoryPage: React.FC = () => {
                           </span>
                         )}
                       </td>
-                      <td className="py-4 px-6">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase whitespace-nowrap transition-all ${
-                            isSelected
-                              ? 'bg-slate-900 text-emerald-400 border border-slate-800 shadow-2xs'
-                              : emp.status === 'active'
-                              ? 'bg-emerald-100/90 text-emerald-900 border border-emerald-200'
-                              : 'bg-slate-100 text-slate-700 border border-slate-200'
-                          }`}
-                        >
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                              emp.status === 'active'
-                                ? isSelected
-                                  ? 'bg-emerald-400 animate-pulse'
-                                  : 'bg-emerald-600 animate-pulse'
-                                : 'bg-slate-400'
-                            }`}
-                          ></span>
-                          <span>{emp.status.replace('_', ' ')}</span>
-                        </span>
+                      <td className="py-4 px-6 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          {emp.status === 'active' ? (
+                            <div
+                              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold tracking-wider uppercase whitespace-nowrap transition-all ${
+                                isSelected
+                                  ? 'bg-slate-900 text-emerald-400 border border-slate-800'
+                                  : 'bg-emerald-50 text-emerald-800 border border-emerald-200/80 shadow-2xs'
+                              }`}
+                            >
+                              <span className="relative flex h-2 w-2 shrink-0">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                              </span>
+                              <span>Active</span>
+                            </div>
+                          ) : (
+                            <div
+                              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase whitespace-nowrap transition-all ${
+                                isSelected
+                                  ? 'bg-slate-900 text-slate-300 border border-slate-800'
+                                  : 'bg-slate-100 text-slate-700 border border-slate-200'
+                              }`}
+                            >
+                              <span className="h-1.5 w-1.5 rounded-full bg-slate-400 shrink-0"></span>
+                              <span>{emp.status.replace('_', ' ')}</span>
+                            </div>
+                          )}
+                        </div>
                       </td>
 
                       {/* Action Buttons */}
