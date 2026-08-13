@@ -30,6 +30,7 @@ export const DirectoryPage: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(15);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
 
@@ -67,14 +68,14 @@ export const DirectoryPage: React.FC = () => {
   useEffect(() => {
     fetchEmployees();
     fetchProjects();
-  }, [page, search, department, projectId, status, seatAllocationStatus]);
+  }, [page, limit, search, department, projectId, status, seatAllocationStatus]);
 
   const fetchEmployees = async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: '15'
+        limit: limit.toString()
       });
 
       if (search) params.append('search', search);
@@ -431,23 +432,64 @@ export const DirectoryPage: React.FC = () => {
         )}
 
         {/* Pagination Footer */}
-        <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 bg-slate-50/50">
-          <span>Page <strong>{page}</strong> of <strong>{totalPages}</strong> ({totalRecords} records)</span>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="p-2 border border-slate-200 rounded-full hover:bg-white disabled:opacity-40"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="p-2 border border-slate-200 rounded-full hover:bg-white disabled:opacity-40"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
+        <div className="p-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500 bg-slate-50/50">
+          <div className="flex items-center gap-3">
+            <span>
+              Showing <strong>{(page - 1) * limit + 1}</strong> - <strong>{Math.min(page * limit, totalRecords)}</strong> of <strong>{totalRecords.toLocaleString()}</strong> employees
+            </span>
+            <div className="flex items-center gap-1">
+              <span className="text-slate-400">Rows per page:</span>
+              <select
+                value={limit}
+                onChange={(e) => {
+                  setLimit(Number(e.target.value));
+                  setPage(1);
+                }}
+                className="px-2 py-1 text-xs bg-white border border-slate-200 rounded-lg font-bold text-slate-800 focus:outline-none cursor-pointer"
+              >
+                <option value={15}>15</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              <span className="text-slate-400">Page:</span>
+              <input
+                type="number"
+                min={1}
+                max={totalPages}
+                value={page}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  if (val >= 1 && val <= totalPages) setPage(val);
+                }}
+                className="w-12 px-2 py-1 text-xs font-bold text-center bg-white border border-slate-200 rounded-lg focus:outline-none"
+              />
+              <span>of <strong>{totalPages}</strong></span>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="p-1.5 border border-slate-200 rounded-lg hover:bg-white disabled:opacity-40 font-bold transition-colors flex items-center gap-1"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Prev</span>
+              </button>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="p-1.5 border border-slate-200 rounded-lg hover:bg-white disabled:opacity-40 font-bold transition-colors flex items-center gap-1"
+              >
+                <span className="hidden sm:inline">Next</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
