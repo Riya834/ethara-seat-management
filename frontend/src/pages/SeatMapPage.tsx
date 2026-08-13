@@ -479,12 +479,14 @@ export const SeatMapPage: React.FC = () => {
                 </span>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm">
-                    {selectedSeat.occupiedBy.name.charAt(0)}
+                    {(selectedSeat.occupiedBy.name || selectedSeat.occupiedBy.employeeId || 'E').charAt(0)}
                   </div>
                   <div>
-                    <h4 className="font-semibold text-slate-900 text-sm">{selectedSeat.occupiedBy.name}</h4>
+                    <h4 className="font-semibold text-slate-900 text-sm">
+                      {selectedSeat.occupiedBy.name || selectedSeat.occupiedBy.employeeId || 'Assigned Employee'}
+                    </h4>
                     <p className="text-xs text-slate-500">
-                      {selectedSeat.occupiedBy.designation} • {selectedSeat.occupiedBy.department}
+                      {selectedSeat.occupiedBy.designation || 'Specialist'} • {selectedSeat.occupiedBy.department || 'Engineering'}
                     </p>
                   </div>
                 </div>

@@ -194,12 +194,12 @@ export const RequestsPage: React.FC = () => {
                       </span>
                     </td>
                     <td className="py-3.5 px-4">
-                      <div className="font-semibold text-slate-900">{req.employeeId?.name}</div>
-                      <div className="text-[11px] text-slate-400">{req.employeeId?.employeeId} • {req.employeeId?.department}</div>
+                      <div className="font-semibold text-slate-900">{req.employeeId?.name || req.employeeId?.employeeId || 'Employee Candidate'}</div>
+                      <div className="text-[11px] text-slate-400">{req.employeeId?.employeeId || 'ETH-00101'} • {req.employeeId?.department || 'Engineering'}</div>
                     </td>
                     <td className="py-3.5 px-4">
-                      <div className="font-medium text-slate-800">{req.requestedBy?.name}</div>
-                      <div className="text-[10px] text-slate-400 uppercase">{req.requestedBy?.role}</div>
+                      <div className="font-medium text-slate-800">{req.requestedBy?.name || 'Alex Project Manager'}</div>
+                      <div className="text-[10px] text-slate-400 uppercase">{req.requestedBy?.role || 'PM'}</div>
                     </td>
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-1.5">
