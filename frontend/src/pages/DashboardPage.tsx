@@ -27,6 +27,8 @@ export const DashboardPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [data, setData] = useState<any>(null);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(false);
   const defaultMetrics = {
     summary: {
       totalEmployees: 5000,
