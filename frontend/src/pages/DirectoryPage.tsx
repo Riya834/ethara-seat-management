@@ -361,13 +361,24 @@ export const DirectoryPage: React.FC = () => {
                       </td>
                       <td className="py-4 px-6">
                         <span
-                          className={`inline-block px-2.5 py-0.5 text-[10px] font-bold rounded-full uppercase ${
-                            emp.status === 'active'
-                              ? 'bg-emerald-100 text-emerald-900'
-                              : 'bg-blue-100 text-blue-900'
+                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase whitespace-nowrap transition-all ${
+                            isSelected
+                              ? 'bg-slate-900 text-emerald-400 border border-slate-800 shadow-2xs'
+                              : emp.status === 'active'
+                              ? 'bg-emerald-100/90 text-emerald-900 border border-emerald-200'
+                              : 'bg-slate-100 text-slate-700 border border-slate-200'
                           }`}
                         >
-                          ● {emp.status.replace('_', ' ')}
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                              emp.status === 'active'
+                                ? isSelected
+                                  ? 'bg-emerald-400 animate-pulse'
+                                  : 'bg-emerald-600 animate-pulse'
+                                : 'bg-slate-400'
+                            }`}
+                          ></span>
+                          <span>{emp.status.replace('_', ' ')}</span>
                         </span>
                       </td>
 
