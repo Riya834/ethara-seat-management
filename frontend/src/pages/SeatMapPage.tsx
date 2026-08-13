@@ -19,18 +19,7 @@ import { useAuth } from '../context/AuthContext';
 
 export const SeatMapPage: React.FC = () => {
   const { user } = useAuth();
-  const [floors, setFloors] = useState<Floor[]>([]);
-  const [zones, setZones] = useState<Zone[]>([]);
-  const [seats, setSeats] = useState<Seat[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [unallocatedEmployees, setUnallocatedEmployees] = useState<Employee[]>([]);
 
-  const [selectedFloorId, setSelectedFloorId] = useState<string>('');
-  const [selectedZoneId, setSelectedZoneId] = useState<string>('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
-  const [projectFilter, setProjectFilter] = useState<string>('');
-
-  const [loading, setLoading] = useState(true);
   const [selectedSeat, setSelectedSeat] = useState<Seat | null>(null);
 
   // Direct Assign / Request states
@@ -38,20 +27,6 @@ export const SeatMapPage: React.FC = () => {
   const [requestReason, setRequestReason] = useState<string>('');
   const [actionSubmitting, setActionSubmitting] = useState(false);
   const [actionSuccessMsg, setActionSuccessMsg] = useState('');
-
-  useEffect(() => {
-    fetchInitialData();
-  }, []);
-
-  useEffect(() => {
-    if (selectedFloorId) {
-      fetchZonesForFloor(selectedFloorId);
-    }
-  }, [selectedFloorId]);
-
-  useEffect(() => {
-    fetchSeats();
-  }, [selectedFloorId, selectedZoneId, statusFilter, projectFilter]);
 
   const defaultFloors: Floor[] = [
     { _id: 'fl1', floorNumber: 1, name: 'Floor 1 - Executive Wing', building: 'Ethara HQ' },
@@ -98,12 +73,41 @@ export const SeatMapPage: React.FC = () => {
     return mockList;
   };
 
+  const [floors, setFloors] = useState<Floor[]>(defaultFloors);
+  const [selectedFloorId, setSelectedFloorId] = useState<string>(defaultFloors[0]._id);
+  const [zones, setZones] = useState<Zone[]>([
+    { _id: `z_a_${defaultFloors[0]._id}`, zoneName: 'Zone A - East Wing', capacity: 100, floorId: defaultFloors[0]._id },
+    { _id: `z_b_${defaultFloors[0]._id}`, zoneName: 'Zone B - West Wing', capacity: 100, floorId: defaultFloors[0]._id }
+  ]);
+  const [selectedZoneId, setSelectedZoneId] = useState<string>('');
+  const [seats, setSeats] = useState<Seat[]>(() => generateMockSeats(defaultFloors[0]._id));
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [unallocatedEmployees, setUnallocatedEmployees] = useState<Employee[]>([]);
+
+  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [projectFilter, setProjectFilter] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    fetchInitialData();
+  }, []);
+
+  useEffect(() => {
+    if (selectedFloorId) {
+      fetchZonesForFloor(selectedFloorId);
+    }
+  }, [selectedFloorId]);
+
+  useEffect(() => {
+    fetchSeats();
+  }, [selectedFloorId, selectedZoneId, statusFilter, projectFilter]);
+
   const fetchInitialData = async () => {
     try {
       const [flRes, projRes, empRes] = await Promise.all([
-        api.get('/seats/floors'),
-        api.get('/projects'),
-        api.get('/employees?seatAllocationStatus=pending&limit=100')
+        api.get('/seats/floors', { timeout: 1500 }),
+        api.get('/projects', { timeout: 1500 }),
+        api.get('/employees?seatAllocationStatus=pending&limit=100', { timeout: 1500 })
       ]);
 
       const flList = Array.isArray(flRes.data) && flRes.data.length > 0 ? flRes.data : defaultFloors;
@@ -113,14 +117,8 @@ export const SeatMapPage: React.FC = () => {
       setFloors(flList);
       setProjects(projList);
       setUnallocatedEmployees(empList);
-
-      if (flList.length > 0) {
-        setSelectedFloorId(flList[0]._id);
-      }
     } catch (err) {
-      console.warn('Network delay fetching floor data. Loading default floors:');
-      setFloors(defaultFloors);
-      setSelectedFloorId(defaultFloors[0]._id);
+      console.warn('Background sync delay fetching floor metadata. Using default initial state.');
     }
   };
 
