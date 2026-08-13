@@ -8,12 +8,20 @@ const getBaseURL = () => {
   if (typeof window !== 'undefined') {
     const saved = localStorage.getItem('ethara_backend_url');
     if (saved) return saved;
+
+    // Automatic Render environment backend detection
+    const hostname = window.location.hostname;
+    if (hostname.includes('.onrender.com')) {
+      // If deployed on Render, default to server service
+      return 'https://ethara-seat-management-server.onrender.com/api';
+    }
   }
   return '/api';
 };
 
 const api = axios.create({
   baseURL: getBaseURL(),
+  timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
   }
@@ -26,7 +34,11 @@ api.interceptors.request.use(
       config.baseURL = meta.env.VITE_API_URL;
     } else if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('ethara_backend_url');
-      if (saved) config.baseURL = saved;
+      if (saved) {
+        config.baseURL = saved;
+      } else if (window.location.hostname.includes('.onrender.com')) {
+        config.baseURL = 'https://ethara-seat-management-server.onrender.com/api';
+      }
     }
 
     const token = localStorage.getItem('ethara_token');
@@ -41,10 +53,14 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
+    // Only redirect on 401 if request is NOT login or register endpoint
+    const url = error.config?.url || '';
+    const isAuthRequest = url.includes('/auth/login') || url.includes('/auth/register');
+
+    if (error.response && error.response.status === 401 && !isAuthRequest) {
       localStorage.removeItem('ethara_token');
       localStorage.removeItem('ethara_user');
-      if (window.location.pathname !== '/login') {
+      if (window.location.pathname !== '/login' && window.location.pathname !== '/signup') {
         window.location.href = '/login';
       }
     }
