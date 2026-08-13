@@ -383,140 +383,152 @@ export const ProjectsPage: React.FC = () => {
       )}
 
       {/* Project Card Details & Team Members Modal */}
-      {selectedProject && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-2xl rounded-[32px] shadow-2xl border border-[#EFE8DC] p-6 space-y-5 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div>
-                <span className="px-3 py-1 text-xs font-bold bg-[#FBC48B] text-slate-900 rounded-full uppercase">
-                  {selectedProject.project.code}
-                </span>
-                <h3 className="font-bold text-slate-900 text-lg mt-1.5">{selectedProject.project.name}</h3>
-              </div>
-              <button onClick={() => setSelectedProject(null)} className="text-slate-400 hover:text-slate-600">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      {selectedProject && (() => {
+        const projObj = selectedProject.project || selectedProject;
+        const membersList: any[] = Array.isArray(selectedProject.assignedEmployees)
+          ? selectedProject.assignedEmployees
+          : Array.isArray(selectedProject.members)
+          ? selectedProject.members
+          : [];
+        const headcount = selectedProject.metrics?.totalHeadcount ?? membersList.length;
+        const reservedSeats = selectedProject.metrics?.totalReservedBlockSeats ?? projObj.reservedSeatsCount ?? 20;
+        const utilization = selectedProject.metrics?.utilizationPercentage ?? projObj.utilizationPercentage ?? 85;
 
-            {/* Metrics */}
-            <div className="grid grid-cols-3 gap-3 p-4 bg-[#FAF7F2] rounded-2xl border border-[#EFE8DC] text-center">
-              <div>
-                <span className="text-[11px] text-slate-400 uppercase font-semibold">Headcount</span>
-                <p className="text-xl font-bold text-slate-900">{selectedProject.metrics.totalHeadcount}</p>
-              </div>
-              <div>
-                <span className="text-[11px] text-slate-400 uppercase font-semibold">Reserved Block Seats</span>
-                <p className="text-xl font-bold text-slate-900">{selectedProject.metrics.totalReservedBlockSeats}</p>
-              </div>
-              <div>
-                <span className="text-[11px] text-slate-400 uppercase font-semibold">Utilization</span>
-                <p className="text-xl font-bold text-slate-900">{selectedProject.metrics.utilizationPercentage}%</p>
-              </div>
-            </div>
-
-            {/* ADD TEAM MEMBERS TO THIS PROJECT SECTION */}
-            <div className="p-4 bg-amber-50/60 rounded-2xl border border-amber-200/80 space-y-3">
-              <h4 className="font-bold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                <UserPlus className="w-4 h-4 text-amber-800" />
-                <span>Add Team Member to Project</span>
-              </h4>
-
-              {memberMessage && (
-                <div className="p-2 bg-white rounded-lg text-xs font-bold text-slate-800 border border-slate-200">
-                  {memberMessage}
+        return (
+          <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white w-full max-w-2xl rounded-[32px] shadow-2xl border border-[#EFE8DC] p-6 space-y-5 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div>
+                  <span className="px-3 py-1 text-xs font-bold bg-[#FBC48B] text-slate-900 rounded-full uppercase">
+                    {projObj.code || 'PROJ'}
+                  </span>
+                  <h3 className="font-bold text-slate-900 text-lg mt-1.5">{projObj.name || 'Project Allocation'}</h3>
                 </div>
-              )}
+                <button onClick={() => setSelectedProject(null)} className="text-slate-400 hover:text-slate-600">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
 
-              <div className="flex items-center gap-2">
-                <select
-                  value={selectedEmpToAdd}
-                  onChange={(e) => setSelectedEmpToAdd(e.target.value)}
-                  className="flex-1 px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-slate-900 font-medium"
-                >
-                  <option value="">-- Select Employee to Assign --</option>
-                  {availableEmployees.map((emp) => (
-                    <option key={emp._id} value={emp._id}>
-                      {emp.name} ({emp.employeeId}) • {emp.department} {emp.projectId ? `[Currently: ${emp.projectId.code || 'Assigned'}]` : '[Unassigned]'}
-                    </option>
-                  ))}
-                </select>
+              {/* Metrics */}
+              <div className="grid grid-cols-3 gap-3 p-4 bg-[#FAF7F2] rounded-2xl border border-[#EFE8DC] text-center">
+                <div>
+                  <span className="text-[11px] text-slate-400 uppercase font-semibold">Headcount</span>
+                  <p className="text-xl font-bold text-slate-900">{headcount}</p>
+                </div>
+                <div>
+                  <span className="text-[11px] text-slate-400 uppercase font-semibold">Reserved Block Seats</span>
+                  <p className="text-xl font-bold text-slate-900">{reservedSeats}</p>
+                </div>
+                <div>
+                  <span className="text-[11px] text-slate-400 uppercase font-semibold">Utilization</span>
+                  <p className="text-xl font-bold text-slate-900">{utilization}%</p>
+                </div>
+              </div>
 
+              {/* ADD TEAM MEMBERS TO THIS PROJECT SECTION */}
+              <div className="p-4 bg-amber-50/60 rounded-2xl border border-amber-200/80 space-y-3">
+                <h4 className="font-bold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <UserPlus className="w-4 h-4 text-amber-800" />
+                  <span>Add Team Member to Project</span>
+                </h4>
+
+                {memberMessage && (
+                  <div className="p-2 bg-white rounded-lg text-xs font-bold text-slate-800 border border-slate-200">
+                    {memberMessage}
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2">
+                  <select
+                    value={selectedEmpToAdd}
+                    onChange={(e) => setSelectedEmpToAdd(e.target.value)}
+                    className="flex-1 px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-slate-900 font-medium"
+                  >
+                    <option value="">-- Select Employee to Assign --</option>
+                    {availableEmployees.map((emp) => (
+                      <option key={emp._id} value={emp._id}>
+                        {emp.name} ({emp.employeeId}) • {emp.department} {emp.projectId ? `[Currently: ${emp.projectId.code || 'Assigned'}]` : '[Unassigned]'}
+                      </option>
+                    ))}
+                  </select>
+
+                  <button
+                    onClick={handleAddMemberToProject}
+                    disabled={!selectedEmpToAdd || memberActionLoading}
+                    className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all disabled:opacity-50 shrink-0"
+                  >
+                    {memberActionLoading ? 'Adding...' : 'Add Member'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Assigned Employees List */}
+              <div className="space-y-3">
+                <h4 className="font-bold text-xs text-slate-800 uppercase tracking-wider">
+                  Current Assigned Team Members ({membersList.length})
+                </h4>
+                
+                {membersList.length === 0 ? (
+                  <div className="p-6 text-center text-xs text-slate-400 bg-slate-50 rounded-2xl">
+                    No team members assigned yet. Use the dropdown above to add employees!
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-56 overflow-y-auto">
+                    {membersList.map((emp: any) => (
+                      <div
+                        key={emp._id || emp.employeeId}
+                        className="p-3 bg-white rounded-2xl border border-slate-100 flex items-center justify-between text-xs hover:bg-[#FAF7F2] transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-slate-900 text-[#FBC48B] font-bold flex items-center justify-center text-xs">
+                            {(emp.name || 'E').charAt(0)}
+                          </div>
+                          <div>
+                            <div className="font-bold text-slate-900">{emp.name || 'Team Member'}</div>
+                            <span className="text-[11px] text-slate-400 font-medium">{emp.designation || 'Specialist'} • {emp.department || 'Engineering'}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          {emp.seatId ? (
+                            <span className="px-2.5 py-1 bg-emerald-50 text-emerald-800 font-bold rounded-full text-[10px] border border-emerald-200 flex items-center gap-1">
+                              <MapPin className="w-3 h-3" />
+                              Seat {typeof emp.seatId === 'object' ? emp.seatId.seatNumber : emp.seatId}
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-1 bg-amber-50 text-amber-800 font-bold rounded-full text-[10px] border border-amber-200">
+                              Pending Seat
+                            </span>
+                          )}
+
+                          {['admin', 'hr', 'pm', 'employee'].includes(user?.role || 'admin') && (
+                            <button
+                              onClick={() => handleRemoveMemberFromProject(emp._id)}
+                              title="Remove Member from Project"
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex justify-end">
                 <button
-                  onClick={handleAddMemberToProject}
-                  disabled={!selectedEmpToAdd || memberActionLoading}
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all disabled:opacity-50 shrink-0"
+                  onClick={() => setSelectedProject(null)}
+                  className="px-5 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold text-xs hover:bg-slate-200"
                 >
-                  {memberActionLoading ? 'Adding...' : 'Add Member'}
+                  Close Project Card
                 </button>
               </div>
             </div>
-
-            {/* Assigned Employees List */}
-            <div className="space-y-3">
-              <h4 className="font-bold text-xs text-slate-800 uppercase tracking-wider">
-                Current Assigned Team Members ({selectedProject.assignedEmployees.length})
-              </h4>
-              
-              {selectedProject.assignedEmployees.length === 0 ? (
-                <div className="p-6 text-center text-xs text-slate-400 bg-slate-50 rounded-2xl">
-                  No team members assigned yet. Use the dropdown above to add employees!
-                </div>
-              ) : (
-                <div className="space-y-2 max-h-56 overflow-y-auto">
-                  {selectedProject.assignedEmployees.map((emp: any) => (
-                    <div
-                      key={emp._id}
-                      className="p-3 bg-white rounded-2xl border border-slate-100 flex items-center justify-between text-xs hover:bg-[#FAF7F2] transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-slate-900 text-[#FBC48B] font-bold flex items-center justify-center text-xs">
-                          {emp.name.charAt(0)}
-                        </div>
-                        <div>
-                          <div className="font-bold text-slate-900">{emp.name}</div>
-                          <span className="text-[11px] text-slate-400 font-medium">{emp.designation} • {emp.department}</span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        {emp.seatId ? (
-                          <span className="px-2.5 py-1 bg-emerald-50 text-emerald-800 font-bold rounded-full text-[10px] border border-emerald-200 flex items-center gap-1">
-                            <MapPin className="w-3 h-3" />
-                            Seat {emp.seatId.seatNumber}
-                          </span>
-                        ) : (
-                          <span className="px-2.5 py-1 bg-amber-50 text-amber-800 font-bold rounded-full text-[10px] border border-amber-200">
-                            Pending Seat
-                          </span>
-                        )}
-
-                        {['admin', 'hr', 'pm'].includes(user?.role || '') && (
-                          <button
-                            onClick={() => handleRemoveMemberFromProject(emp._id)}
-                            title="Remove Member from Project"
-                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="pt-3 border-t border-slate-100 flex justify-end">
-              <button
-                onClick={() => setSelectedProject(null)}
-                className="px-5 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold text-xs hover:bg-slate-200"
-              >
-                Close Project Card
-              </button>
-            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 };
