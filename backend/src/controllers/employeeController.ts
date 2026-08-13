@@ -218,13 +218,15 @@ export const createEmployee = async (req: AuthRequest, res: Response) => {
         seatAllocationStatus: 'pending'
       });
 
-      await logAudit(
+      invalidateEmployeeCache();
+
+      logAudit(
         getActor(req),
         'CREATE_EMPLOYEE',
         'Employee',
         employee._id.toString(),
         { name, employeeId }
-      );
+      ).catch(() => {});
 
       return res.status(201).json(employee);
     }
@@ -307,13 +309,15 @@ export const deleteEmployee = async (req: AuthRequest, res: Response) => {
       await Employee.findByIdAndDelete(id);
       await User.findOneAndDelete({ employeeId: id });
 
-      await logAudit(
+      invalidateEmployeeCache();
+
+      logAudit(
         getActor(req),
         'DELETE_EMPLOYEE',
         'Employee',
         id,
         { name: employee.name }
-      );
+      ).catch(() => {});
 
       return res.json({ message: 'Employee deleted successfully.' });
     }

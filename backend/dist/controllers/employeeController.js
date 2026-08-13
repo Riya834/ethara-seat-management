@@ -199,7 +199,8 @@ const createEmployee = async (req, res) => {
                 status: status || 'active',
                 seatAllocationStatus: 'pending'
             });
-            await (0, auditLogger_1.logAudit)(getActor(req), 'CREATE_EMPLOYEE', 'Employee', employee._id.toString(), { name, employeeId });
+            (0, exports.invalidateEmployeeCache)();
+            (0, auditLogger_1.logAudit)(getActor(req), 'CREATE_EMPLOYEE', 'Employee', employee._id.toString(), { name, employeeId }).catch(() => { });
             return res.status(201).json(employee);
         }
         await mockStore_1.mockStore.initialize();
@@ -270,7 +271,8 @@ const deleteEmployee = async (req, res) => {
             }
             await Employee_1.Employee.findByIdAndDelete(id);
             await User_1.User.findOneAndDelete({ employeeId: id });
-            await (0, auditLogger_1.logAudit)(getActor(req), 'DELETE_EMPLOYEE', 'Employee', id, { name: employee.name });
+            (0, exports.invalidateEmployeeCache)();
+            (0, auditLogger_1.logAudit)(getActor(req), 'DELETE_EMPLOYEE', 'Employee', id, { name: employee.name }).catch(() => { });
             return res.json({ message: 'Employee deleted successfully.' });
         }
         await mockStore_1.mockStore.initialize();

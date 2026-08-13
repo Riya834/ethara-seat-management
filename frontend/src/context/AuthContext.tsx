@@ -15,15 +15,30 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [token, setToken] = useState<string | null>(() => {
+    const isLoggedOut = localStorage.getItem('ethara_logged_out') === 'true';
     const savedToken = localStorage.getItem('ethara_token');
     if (savedToken) return savedToken;
-    // Auto-provision demo token for guest devices
+
+    if (isLoggedOut || window.location.pathname === '/login' || window.location.pathname === '/signup') {
+      return null;
+    }
+
+    // Auto-provision demo token for guest devices visiting deep app routes
     const demoToken = 'demo_admin_jwt_token_2026';
     localStorage.setItem('ethara_token', demoToken);
     return demoToken;
   });
   
   const [user, setUser] = useState<User | null>(() => {
+    const isLoggedOut = localStorage.getItem('ethara_logged_out') === 'true';
+    if (isLoggedOut || window.location.pathname === '/login' || window.location.pathname === '/signup') {
+      const saved = localStorage.getItem('ethara_user');
+      if (saved && localStorage.getItem('ethara_token')) {
+        try { return JSON.parse(saved); } catch (e) {}
+      }
+      return null;
+    }
+
     try {
       const saved = localStorage.getItem('ethara_user');
       if (saved) return JSON.parse(saved);
@@ -76,6 +91,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = (newToken: string, newUser: User) => {
+    localStorage.removeItem('ethara_logged_out');
     setToken(newToken);
     setUser(newUser);
     localStorage.setItem('ethara_token', newToken);
@@ -88,6 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
+    localStorage.setItem('ethara_logged_out', 'true');
     setToken(null);
     setUser(null);
     localStorage.removeItem('ethara_token');

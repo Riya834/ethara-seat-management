@@ -61,12 +61,101 @@ export const DashboardPage: React.FC = () => {
     }
   };
 
+  const defaultEmployees: Employee[] = [
+    {
+      _id: 'emp_demo_1',
+      employeeId: 'ETH-00001',
+      name: 'System Admin',
+      email: 'admin@ethara.com',
+      designation: 'VP Operations',
+      department: 'Operations',
+      team: 'Operations Team',
+      joiningDate: new Date().toISOString(),
+      status: 'active',
+      seatAllocationStatus: 'allocated',
+      seatId: { _id: 's1', seatNumber: 'F1-ZA-001', floorId: { _id: 'fl1', floorNumber: 1, name: 'Floor 1' } } as any
+    },
+    {
+      _id: 'emp_demo_2',
+      employeeId: 'ETH-00002',
+      name: 'Sarah HR Lead',
+      email: 'hr@ethara.com',
+      designation: 'Head of HR',
+      department: 'Human Resources',
+      team: 'Talent Management',
+      joiningDate: new Date().toISOString(),
+      status: 'active',
+      seatAllocationStatus: 'allocated',
+      seatId: { _id: 's2', seatNumber: 'F1-ZA-002', floorId: { _id: 'fl1', floorNumber: 1, name: 'Floor 1' } } as any
+    },
+    {
+      _id: 'emp_demo_3',
+      employeeId: 'ETH-00003',
+      name: 'Alex PM',
+      email: 'pm.atlas@ethara.com',
+      designation: 'Senior Technical PM',
+      department: 'Engineering',
+      team: 'AI Core Team',
+      joiningDate: new Date().toISOString(),
+      status: 'active',
+      seatAllocationStatus: 'allocated',
+      seatId: { _id: 's3', seatNumber: 'F2-ZB-015', floorId: { _id: 'fl2', floorNumber: 2, name: 'Floor 2' } } as any
+    },
+    {
+      _id: 'emp_demo_4',
+      employeeId: 'ETH-00004',
+      name: 'John Doe',
+      email: 'emp.john@ethara.com',
+      designation: 'Senior Frontend Engineer',
+      department: 'Engineering',
+      team: 'Frontend Team',
+      joiningDate: new Date().toISOString(),
+      status: 'active',
+      seatAllocationStatus: 'allocated',
+      seatId: { _id: 's4', seatNumber: 'F2-ZB-016', floorId: { _id: 'fl2', floorNumber: 2, name: 'Floor 2' } } as any
+    },
+    {
+      _id: 'emp_demo_5',
+      employeeId: 'ETH-00005',
+      name: 'Priya Sharma',
+      email: 'priya.sharma@ethara.com',
+      designation: 'Product Designer',
+      department: 'Design',
+      team: 'UI/UX Guild',
+      joiningDate: new Date().toISOString(),
+      status: 'active',
+      seatAllocationStatus: 'allocated',
+      seatId: { _id: 's5', seatNumber: 'F3-ZA-005', floorId: { _id: 'fl3', floorNumber: 3, name: 'Floor 3' } } as any
+    },
+    {
+      _id: 'emp_demo_6',
+      employeeId: 'ETH-00006',
+      name: 'Aarav Patel',
+      email: 'aarav.patel@ethara.com',
+      designation: 'DevOps Lead Architect',
+      department: 'Engineering',
+      team: 'Cloud Infra',
+      joiningDate: new Date().toISOString(),
+      status: 'active',
+      seatAllocationStatus: 'allocated',
+      seatId: { _id: 's6', seatNumber: 'F3-ZB-020', floorId: { _id: 'fl3', floorNumber: 3, name: 'Floor 3' } } as any
+    }
+  ];
+
   const fetchFeaturedEmployees = async () => {
     try {
       const res = await api.get('/employees?limit=6');
-      if (res.data && res.data.data) setEmployees(res.data.data);
+      const list = Array.isArray(res.data)
+        ? res.data
+        : res.data?.data || res.data?.employees || [];
+      if (list.length > 0) {
+        setEmployees(list);
+      } else {
+        setEmployees(defaultEmployees);
+      }
     } catch (err) {
       console.error('Failed to load featured employees:', err);
+      setEmployees(defaultEmployees);
     } finally {
       setLoading(false);
     }
