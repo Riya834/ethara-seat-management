@@ -20,13 +20,15 @@ export const LoginPage: React.FC<{ initialMode?: 'signin' | 'signup' }> = ({ ini
     setMode(initialMode);
   }, [initialMode]);
 
-  // If already logged in, redirect immediately
+  // If already logged in, redirect immediately without hard page reloads
   useEffect(() => {
-    if (user) {
+    if (user && localStorage.getItem('ethara_token')) {
       const targetPath = user.role === 'employee' ? '/directory' : '/dashboard';
-      window.location.href = targetPath;
+      if (window.location.pathname === '/login' || window.location.pathname === '/signup') {
+        navigate(targetPath, { replace: true });
+      }
     }
-  }, [user]);
+  }, [user, navigate]);
 
   // Sign In fields
   const [email, setEmail] = useState('');
