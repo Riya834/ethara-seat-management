@@ -3,6 +3,7 @@ import { Briefcase, Plus, Users, Grid, Calendar, CheckCircle, X, ShieldAlert, La
 import api from '../services/api';
 import { Project, Employee, Seat } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { SearchableEmployeeSelect } from '../components/SearchableEmployeeSelect';
 
 export const ProjectsPage: React.FC = () => {
   const { user } = useAuth();
@@ -450,27 +451,23 @@ export const ProjectsPage: React.FC = () => {
                   </div>
                 )}
 
-                <div className="flex items-center gap-2">
-                  <select
-                    value={selectedEmpToAdd}
-                    onChange={(e) => setSelectedEmpToAdd(e.target.value)}
-                    className="flex-1 px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-slate-900 font-medium"
-                  >
-                    <option value="">-- Select Employee to Assign --</option>
-                    {availableEmployees.map((emp) => (
-                      <option key={emp._id} value={emp._id}>
-                        {emp.name} ({emp.employeeId}) • {emp.department} {emp.projectId ? `[Currently: ${emp.projectId.code || 'Assigned'}]` : '[Unassigned]'}
-                      </option>
-                    ))}
-                  </select>
+                <div className="space-y-2">
+                  <SearchableEmployeeSelect
+                    employees={availableEmployees}
+                    selectedEmployeeId={selectedEmpToAdd}
+                    onSelectEmployee={(empId) => setSelectedEmpToAdd(empId)}
+                    placeholder="Type employee name or ID to filter project candidates..."
+                  />
 
-                  <button
-                    onClick={handleAddMemberToProject}
-                    disabled={!selectedEmpToAdd || memberActionLoading}
-                    className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all disabled:opacity-50 shrink-0"
-                  >
-                    {memberActionLoading ? 'Adding...' : 'Add Member'}
-                  </button>
+                  <div className="flex justify-end pt-1">
+                    <button
+                      onClick={handleAddMemberToProject}
+                      disabled={!selectedEmpToAdd || memberActionLoading}
+                      className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all disabled:opacity-50 shrink-0 shadow-xs"
+                    >
+                      {memberActionLoading ? 'Adding...' : 'Add Member to Project'}
+                    </button>
+                  </div>
                 </div>
               </div>
 

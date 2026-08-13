@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { SearchableEmployeeSelect } from '../components/SearchableEmployeeSelect';
 import {
   Grid,
   Layers,
@@ -519,19 +520,13 @@ export const SeatMapPage: React.FC = () => {
                     </button>
                   ) : (
                     <div className="space-y-2">
-                      <label className="block text-xs font-medium text-slate-700">Assign Unallocated Employee</label>
-                      <select
-                        value={assignEmployeeId}
-                        onChange={(e) => setAssignEmployeeId(e.target.value)}
-                        className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl"
-                      >
-                        <option value="">Select Employee...</option>
-                        {unallocatedEmployees.map((emp) => (
-                          <option key={emp._id} value={emp._id}>
-                            {emp.employeeId} - {emp.name} ({emp.department})
-                          </option>
-                        ))}
-                      </select>
+                      <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">Assign Unallocated Employee</label>
+                      <SearchableEmployeeSelect
+                        employees={unallocatedEmployees}
+                        selectedEmployeeId={assignEmployeeId}
+                        onSelectEmployee={(empId) => setAssignEmployeeId(empId)}
+                        placeholder="Type employee name or ID to filter choices..."
+                      />
                       <button
                         onClick={handleDirectAssign}
                         disabled={!assignEmployeeId || actionSubmitting}
